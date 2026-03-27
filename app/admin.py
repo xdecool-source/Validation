@@ -13,7 +13,7 @@ import csv
 
 router = APIRouter()
 
-@router.get("/init-db")
+# @router.get("/init-db")
 def init_db():
     Base.metadata.create_all(bind=engine)
     return {"message": "Tables créées"}
@@ -39,7 +39,6 @@ def get_players():
 
     return joueurs
 
-@router.get("/match-days")
 def get_match_days():
     with engine.connect() as conn:
         result = conn.execute(text("""
@@ -49,7 +48,7 @@ def get_match_days():
         """))
         return [dict(row._mapping) for row in result]
     
-@router.get("/init-match-days")
+# @router.get("/init-match-days")
 def init_match_days():
     with engine.begin() as conn:
         for day in settings.MATCH_DAYS:
@@ -62,10 +61,12 @@ def init_match_days():
                     is_home = EXCLUDED.is_home,
                     day_type = EXCLUDED.day_type
             """), day)
-
+            
+    print("✅ Match days initialisés")
     return {"message": "Journées configurées"}
+    
 
-@router.get("/init-slots")
+# @router.get("/init-slots")
 def init_slots():
     with engine.begin() as conn:
         for day_id in range(1, 15):
@@ -86,7 +87,7 @@ def init_slots():
                     "day_id": day_id,
                     "label": label   
                 })
-
+    print("✅ Slots initialisés")
     return {"message": "Slots créés"}
 
 @router.get("/slots")
@@ -227,22 +228,19 @@ def export_excel(match_day_id: int):
     from openpyxl.utils import get_column_letter
 
 # auto largeur colonnes
+    
     for col in ws.columns:
         max_length = 0
         col_letter = get_column_letter(col[0].column)
 
         for cell in col:
-            try:
-                if cell.value:
-                    max_length = max(max_length, len(str(cell.value)))
-            except:
-                pass
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
 
-        adjusted_width = max_length + 2
-        ws.column_dimensions[col_letter].width = adjusted_width
-        
-        stream = io.BytesIO()
-        wb.save(stream)
+        ws.column_dimensions[col_letter].width = max_length + 2
+
+    stream = io.BytesIO()
+    wb.save(stream)
     stream.seek(0)
 
     return StreamingResponse(
