@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Body
+from fastapi import UploadFile, File
 from fastapi.responses import StreamingResponse
 from app.database import engine
 from app.models import Base
@@ -13,15 +14,10 @@ import csv
 
 router = APIRouter()
 
-# @router.get("/init-db")
+@router.get("/init-db")
 def init_db():
     Base.metadata.create_all(bind=engine)
     return {"message": "Tables créées"}
-
-@router.get("/import-joueur") 
-def import_players_route():
-    count = import_joueur()
-    return {"message": f"{count} joueurs importés"}
 
 @router.get("/joueurs")
 def get_players():
@@ -39,6 +35,7 @@ def get_players():
 
     return joueurs
 
+@router.get("/match-days")
 def get_match_days():
     with engine.connect() as conn:
         result = conn.execute(text("""
@@ -48,7 +45,7 @@ def get_match_days():
         """))
         return [dict(row._mapping) for row in result]
     
-# @router.get("/init-match-days")
+@router.get("/init-match-days")
 def init_match_days():
     with engine.begin() as conn:
         for day in settings.MATCH_DAYS:
@@ -66,7 +63,7 @@ def init_match_days():
     return {"message": "Journées configurées"}
     
 
-# @router.get("/init-slots")
+@router.get("/init-slots")
 def init_slots():
     with engine.begin() as conn:
         for day_id in range(1, 15):
