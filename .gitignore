@@ -1,4 +1,5 @@
-*.pyc
-.env
 A_Info/
 __pycache__/
+*.pyc
+.env
+venv/
