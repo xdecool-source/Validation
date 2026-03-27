@@ -1,1 +1,1 @@
-web: gunicorn validate:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
+web: uvicorn validate:app --host 0.0.0.0 --port $PORT
