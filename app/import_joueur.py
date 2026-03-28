@@ -1,27 +1,34 @@
-from fastapi import UploadFile, File, APIRouter
-import pandas as pd
+from fastapi import UploadFile, File, APIRouter, Header, HTTPException
 from sqlalchemy import create_engine, text
-import os
 from dotenv import load_dotenv
+
+import pandas as pd
+import os
 
 load_dotenv()
 
 router = APIRouter()
 
+ADMIN_TOKEN = os.getenv("ADMIN_TOKEN")
+
+def check_admin(x_token: str):
+    if x_token != ADMIN_TOKEN:
+        raise HTTPException(status_code=403, detail="Accès interdit")
+    
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
 
 
 @router.post("/import-joueur")
-async def import_joueur(file: UploadFile = File(...)):
+async def import_joueur(
+    file: UploadFile = File(...),
+    x_token: str = Header(None)   # 👈 ICI (dans les paramètres)
+):
+    check_admin(x_token)  # 👈 ICI (tout en haut de la fonction)
+
     try:
         # 🔹 Lecture Excel depuis upload
-        df = pd.read_excel(
-            file.file,
-            sheet_name="Licencies",
-            engine="xlrd"
-        )
-
+        df = pd.read_excel(file.file, sheet_name=0)
         df.columns = df.columns.str.strip()
 
         players = []

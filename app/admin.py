@@ -1,23 +1,35 @@
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, Header
 from fastapi import UploadFile, File
 from fastapi.responses import StreamingResponse
 from app.database import engine
 from app.models import Base
-from app.import_joueur import import_joueur
-from sqlalchemy import text
-from app.config import settings
 from openpyxl import Workbook
 from openpyxl.styles import Font
+from app.config import settings
+from sqlalchemy import text
+
 
 import io
 import csv
+import os
 
 router = APIRouter()
+
+print("ADMIN ROUTER CHARGÉ")
 
 @router.get("/init-db")
 def init_db():
     Base.metadata.create_all(bind=engine)
     return {"message": "Tables créées"}
+
+@router.get("/is-admin")
+def is_admin(x_token: str = Header(None)):
+    print("TOKEN RECU:", x_token)
+    print("TOKEN ATTENDU:", os.getenv("ADMIN_TOKEN"))
+    if x_token == os.getenv("ADMIN_TOKEN"):
+        return {"is_admin": True}
+    return {"is_admin": False}
+
 
 @router.get("/joueurs")
 def get_players():

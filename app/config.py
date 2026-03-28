@@ -1,10 +1,8 @@
 
-# http://127.0.0.1:8000/import-joueur
-# http://127.0.0.1:8000/joueurs
 # http://127.0.0.1:8000
-# http://127.0.0.1:8000/admin
-# http://127.0.0.1:8000/export-excel/1 1 = J1 journée 1
-# http://127.0.0.1:8000/export/1 = journée 1 = J1 
+# http://127.0.0.1:8000/?admin=valeur_de_admin_token
+# http://127.0.0.1:8000/export-excel/1 
+# 1 = J1 journée 1
 
 
 from dotenv import load_dotenv

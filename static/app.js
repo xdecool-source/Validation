@@ -1,5 +1,32 @@
 let allSlots = [];
 let matchDays = [];
+let isAdmin = false;
+
+const urlParams = new URLSearchParams(window.location.search);
+const ADMIN_TOKEN = urlParams.get("admin");
+
+async function checkAdmin() {
+
+    try {
+        const res = await fetch("/is-admin", {
+            headers: {
+                "x-token": ADMIN_TOKEN
+            }
+        });
+        const data = await res.json();
+        console.log("TOKEN:", ADMIN_TOKEN);
+        console.log("ADMIN:", data);
+
+
+        if (data.is_admin && ADMIN_TOKEN) {
+            isAdmin = true; // 🔥 AJOUT ICI
+            const section = document.getElementById("adminSection");
+            if (section) section.style.display = "block";
+        }
+    } catch (err) {
+        console.error("Erreur admin:", err);
+    }
+}
 
 function formatLabel(label) {
     if (label === "dimanche_matin") return "Dimanche matin";
@@ -13,32 +40,22 @@ function clearResult() {
     if (result) result.innerHTML = "";
 }
 
-// 🔥 FETCH sécurisé
+// FETCH sécurisé
 async function safeFetch(url) {
     const res = await fetch(url);
-    console.log("matchDays:", matchDays);
     if (!res.ok) {
         throw new Error(`Erreur API: ${url}`);
     }
-
     return res.json();
 }
 
 async function loadData() {
     try {
-        console.log("Chargement données...");
-
         matchDays = await safeFetch("/match-days");
         allSlots = await safeFetch("/slots");
-
-        console.log("matchDays:", matchDays);
-        console.log("slots:", allSlots);
-
         const daySelect = document.getElementById("match_day_id");
         if (!daySelect) return;
-
         daySelect.innerHTML = "";
-
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -49,21 +66,17 @@ async function loadData() {
 
             const dayDate = new Date(day.date);
             dayDate.setHours(0, 0, 0, 0);
-
             const option = document.createElement("option");
             option.value = day.id;
             option.text = day.code;
 
-            // 🔥 si passé → grisé + non sélectionnable
+            // si passé → grisé + non sélectionnable
             if (dayDate < today) {
                 option.disabled = true;
                 option.text += " (passée)";
             }
-
             daySelect.appendChild(option);
         });
-
-
 
         let firstAvailable = matchDays.find(day => {
             const d = new Date(day.date);
@@ -71,7 +84,7 @@ async function loadData() {
             return d >= today;
         });
 
-        // 🔥 fallback si tout est passé
+        // fallback si tout est passé
         if (!firstAvailable && matchDays.length > 0) {
             firstAvailable = matchDays[0];
         }
@@ -84,7 +97,6 @@ async function loadData() {
 
     } catch (err) {
         console.error("Erreur loadData:", err);
-
         const resultDiv = document.getElementById("result");
         if (resultDiv) {
             resultDiv.innerHTML =
@@ -108,9 +120,6 @@ function loadSlotsForDay(dayId) {
     let filtered = allSlots
         .filter(s => s.code === "J" + dayId)
         .sort((a, b) => order.indexOf(a.label) - order.indexOf(b.label));
-
-    console.log("Slots filtrés:", filtered);
-
     if (filtered.length === 0) {
         const option = document.createElement("option");
         option.text = "Aucun créneau";
@@ -125,40 +134,30 @@ function loadSlotsForDay(dayId) {
         if (index === 0) option.selected = true;
         slotSelect.appendChild(option);
     });
-
     clearResult();
 }
 
 function updateDate(dayId) {
     const dateDiv = document.getElementById("match_day_date");
     if (!dateDiv) return;
-
     const day = matchDays.find(d => d.id == dayId);
     if (!day) return;
-
     const date = new Date(day.date);
-
     const formatted = date.toLocaleDateString("fr-FR", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric"
     });
-
     dateDiv.innerText = formatted;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-
-    console.log("JS OK");
-
+    checkAdmin(); 
     loadData();
-
     const form = document.getElementById("form");
-
     if (form) {
         form.addEventListener("change", clearResult);
     }
-
     const daySelect = document.getElementById("match_day_id");
     if (daySelect) {
         daySelect.addEventListener("change", function () {
@@ -171,12 +170,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (form) {
         form.addEventListener("submit", async function (e) {
             e.preventDefault();
-
             const btn = document.getElementById("submitBtn");
             const btnText = document.getElementById("btnText");
             const loader = document.getElementById("btnLoader");
             const resultDiv = document.getElementById("result");
-
             btn.disabled = true;
             btnText.innerText = "Envoi...";
             loader.classList.remove("d-none");
@@ -189,23 +186,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     slot_ids: [parseInt(selectedValue)],
                     availability: document.getElementById("availability").value
                 };
-
                 const response = await fetch("/availability", {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
                     body: JSON.stringify(data)
                 });
-                console.log("matchDays:", matchDays);
                 const result = await response.json();
-
                 resultDiv.innerHTML = `
                     <div class="alert ${response.ok ? "alert-success" : "alert-danger"} mx-auto" style="max-width: 300px;">
                         ${result.message}
                     </div>`;
-
             } catch (err) {
                 console.error(err);
-
                 resultDiv.innerHTML =
                     `<div class="alert alert-danger">Erreur réseau</div>`;
             } finally {
@@ -223,14 +215,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (input && display) {
         input.addEventListener("input", async function () {
             clearResult();
-
             const license = this.value.trim();
-
             if (!license) {
                 display.innerText = "";
                 return;
             }
-
             try {
                 const data = await safeFetch("/player/" + license);
 
@@ -249,4 +238,67 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+
+//
+const importForm = document.getElementById("importForm");
+
+if (importForm) {
+    importForm.addEventListener("submit", async function(e) {
+        e.preventDefault();
+        if (!isAdmin) {
+            alert("Accès interdit");
+            return;
+        }
+        const file = document.getElementById("fileInput").files[0];
+        if (!file) {
+            alert("Choisis un fichier !");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const res = await fetch("/import-joueur", {
+                method: "POST",
+                headers: {
+                    "x-token": ADMIN_TOKEN
+                },
+                body: formData
+            });
+
+
+
+            const data = await res.json();
+
+            const msgDiv = document.getElementById("importMessage");
+
+            msgDiv.innerHTML = `
+                <div style="
+                    background:${data.error ? "#dc3545" : "#198754"};
+                    color:white;
+                    padding:4px 10px;
+                    border-radius:6px;
+                    font-size:11px;
+                    text-align:center;
+                ">
+                    ${data.error || data.message}
+                </div>
+            `;
+
+// auto disparition
+setTimeout(() => {
+    msgDiv.innerHTML = "";
+}, 3000);
+
+
+
+
+        } catch (err) {
+            console.error(err);
+            document.getElementById("result").innerHTML =
+                `<div class="alert alert-danger">Erreur import</div>`;
+        }
+    });
+}
 });

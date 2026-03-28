@@ -8,12 +8,16 @@ from app.admin import router as admin_router
 from app.admin import init_match_days, init_slots
 from app.models import Base
 from app import crud
-
+from app.import_joueur import router as import_router
 
 app = FastAPI()
 
 app.include_router(admin_router)
+app.include_router(import_router)
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+print("ROUTES CHARGÉES")
 
 def get_db():
 
