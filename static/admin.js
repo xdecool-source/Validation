@@ -29,18 +29,37 @@ async function loadDispos() {
     const tbody = document.getElementById("table-body");
     tbody.innerHTML = "";
 
-    data.forEach(row => {
-        const tr = document.createElement("tr");
+    data
+        .sort((a, b) => b.ranking - a.ranking) // tri
+        .forEach(row => {
+            const tr = document.createElement("tr");
 
-        tr.innerHTML = `
-            <td>${row.name}</td>
-            <td>${row.ranking}</td>
-            <td>${formatLabel(row.label)}</td>
-        `;
+            tr.innerHTML = `
+                <td>${row.name}</td>
+                <td>
+                    <span class="badge bg-primary">${row.ranking}</span>
+                </td>
+                <td>
+                    <span class="badge ${
+                        row.availability === "disponible"
+                            ? "bg-success"
+                            : "bg-danger"
+                    }">
+                        ${formatLabel(row.label)}
+                    </span>
+                </td>
+            `;
 
-        tbody.appendChild(tr);
-    });
+            tbody.appendChild(tr);
+        });
 }
 
-// 🔥 charger les journées au démarrage
-document.addEventListener("DOMContentLoaded", loadDays);
+// INIT
+document.addEventListener("DOMContentLoaded", async () => {
+    await loadDays();
+    loadDispos();
+
+    document
+        .getElementById("match_day_id")
+        .addEventListener("change", loadDispos);
+});

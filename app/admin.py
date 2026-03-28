@@ -24,10 +24,10 @@ def init_db():
 
 @router.get("/is-admin")
 def is_admin(x_token: str = Header(None)):
-    print("TOKEN RECU:", x_token)
-    print("TOKEN ATTENDU:", os.getenv("ADMIN_TOKEN"))
     if x_token == os.getenv("ADMIN_TOKEN"):
+        print("ADMIN OK")
         return {"is_admin": True}
+    print("ADMIN KO")
     return {"is_admin": False}
 
 

@@ -8,7 +8,6 @@ import os
 load_dotenv()
 
 router = APIRouter()
-
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN")
 
 def check_admin(x_token: str):
@@ -18,13 +17,12 @@ def check_admin(x_token: str):
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
 
-
 @router.post("/import-joueur")
 async def import_joueur(
     file: UploadFile = File(...),
-    x_token: str = Header(None)   # 👈 ICI (dans les paramètres)
+    x_token: str = Header(None)
 ):
-    check_admin(x_token)  # 👈 ICI (tout en haut de la fonction)
+    check_admin(x_token)  
 
     try:
         # 🔹 Lecture Excel depuis upload
