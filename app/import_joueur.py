@@ -35,13 +35,15 @@ async def import_joueur(
             last_name = row.iloc[2]
             first_name = row.iloc[3]
             points = row.iloc[15]
+            email = row.iloc[23]
 
             if pd.isna(license_number) or pd.isna(last_name):
                 continue
             players.append({
                 "license": str(license_number).strip(),
                 "name": f"{first_name} {last_name}".strip(),
-                "ranking": int(points) if not pd.isna(points) else 0
+                "ranking": int(points) if not pd.isna(points) else 0,
+                "email": f"{email}".strip()
             })
 
         # Tri
@@ -51,8 +53,8 @@ async def import_joueur(
         with engine.begin() as conn:
             for p in players:
                 conn.execute(text("""
-                    INSERT INTO players (license, name, ranking)
-                    VALUES (:license, :name, :ranking)
+                    INSERT INTO players (license, name, ranking, email)
+                    VALUES (:license, :name, :ranking, :email)
                     ON CONFLICT (license)
                     DO UPDATE SET
                         name = EXCLUDED.name,

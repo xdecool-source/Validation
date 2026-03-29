@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, Request
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from app.database import SessionLocal, engine
@@ -13,11 +13,26 @@ from contextlib import asynccontextmanager
 
 import os
 
-app = FastAPI()
+# 👉 lifespan AVANT
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("🔄 Vérification / création des tables...")
+    Base.metadata.create_all(bind=engine)
+    init_match_days()
+    init_slots()
+    yield
+
+# 👉 UNE SEULE APP
+app = FastAPI(lifespan=lifespan)
+
+# 👉 TOUT configurer APRÈS
 app.include_router(admin_router)
 app.include_router(import_router)
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
 templates = Jinja2Templates(directory="templates")
+
 
 def get_db():
     db = SessionLocal()
@@ -26,30 +41,23 @@ def get_db():
     finally:
         db.close()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    print("🔄 Vérification / création des tables...")
-    Base.metadata.create_all(bind=engine)
-    init_match_days()
-    init_slots()
-    
-    yield  # démarrage terminé
 
-app = FastAPI(lifespan=lifespan)
-    
 @app.post("/availability")
 def create_availability(avail: AvailabilityCreate, db=Depends(get_db)):
     crud.add_availability(db, avail)
     return {"status": "ok"}
 
+
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse("user.html", {"request": request})
+
 
 @app.get("/admin", response_class=HTMLResponse)
 def admin_page(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
 
-@app.get("/admin-dispo")
+
+@app.get("/admin-dispo", response_class=HTMLResponse)
 def admin_dispos(request: Request):
     return templates.TemplateResponse("admin_dispo.html", {"request": request})

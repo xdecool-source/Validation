@@ -63,6 +63,18 @@
     }
 </style>
 
+<button onclick="setSort('ranking')" class="btn btn-sm btn-primary">
+    Classement
+</button>
+<button onclick="setSort('dispo')" class="btn btn-sm btn-success">
+    Vue Disponibles
+</button>
+<button onclick="setSort('indispo')" class="btn btn-sm btn-danger">
+    Vue Indisponibles
+<button onclick="exportExcel()" class="btn btn-dark btn-sm">
+    Export Excel
+</button>
+
 <div class="text-center mb-2" style="font-size:12px; color:#156e59;">
     Tennis de Table Thuirinois
 </div>
@@ -96,6 +108,9 @@
 
 <!-- JS -->
 <script src="/static/admin.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="/static/export.js"></script>
 
 </body>
 </html>

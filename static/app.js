@@ -14,9 +14,8 @@ async function checkAdmin() {
             }
         });
         const data = await res.json();
-        console.log("TOKEN:", ADMIN_TOKEN);
-        console.log("ADMIN:", data);
-
+        // console.log("TOKEN:", ADMIN_TOKEN);
+        // console.log("ADMIN:", data);
 
         if (data.is_admin && ADMIN_TOKEN) {
             isAdmin = true; // 🔥 AJOUT ICI
@@ -29,6 +28,7 @@ async function checkAdmin() {
 }
 
 function formatLabel(label) {
+
     if (label === "dimanche_matin") return "Dimanche matin";
     if (label === "dimanche_aprem") return "Dimanche après-midi";
     if (label === "samedi_aprem") return "Samedi après-midi";
@@ -36,12 +36,14 @@ function formatLabel(label) {
 }
 
 function clearResult() {
+
     const result = document.getElementById("result");
     if (result) result.innerHTML = "";
 }
 
 // FETCH sécurisé
 async function safeFetch(url) {
+
     const res = await fetch(url);
     if (!res.ok) {
         throw new Error(`Erreur API: ${url}`);
@@ -50,6 +52,7 @@ async function safeFetch(url) {
 }
 
 async function loadData() {
+
     try {
         matchDays = await safeFetch("/match-days");
         allSlots = await safeFetch("/slots");
@@ -60,16 +63,12 @@ async function loadData() {
         today.setHours(0, 0, 0, 0);
 
         // remplir les journées
-
-
         matchDays.forEach(day => {
-
             const dayDate = new Date(day.date);
             dayDate.setHours(0, 0, 0, 0);
             const option = document.createElement("option");
             option.value = day.id;
             option.text = day.code;
-
             // si passé → grisé + non sélectionnable
             if (dayDate < today) {
                 option.disabled = true;
@@ -106,6 +105,7 @@ async function loadData() {
 }
 
 function loadSlotsForDay(dayId) {
+
     const slotSelect = document.getElementById("slot_id");
     if (!slotSelect) return;
     slotSelect.innerHTML = "";
@@ -126,6 +126,7 @@ function loadSlotsForDay(dayId) {
     }
 
     filtered.forEach((slot, index) => {
+
         const option = document.createElement("option");
         option.value = slot.id;
         option.text = formatLabel(slot.label);
@@ -136,6 +137,7 @@ function loadSlotsForDay(dayId) {
 }
 
 function updateDate(dayId) {
+
     const dateDiv = document.getElementById("match_day_date");
     if (!dateDiv) return;
     const day = matchDays.find(d => d.id == dayId);
@@ -150,8 +152,10 @@ function updateDate(dayId) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+
     checkAdmin(); 
     loadData();
+
     const form = document.getElementById("form");
     if (form) {
         form.addEventListener("change", clearResult);
@@ -164,7 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 🔹 submit
+    // valider
     if (form) {
         form.addEventListener("submit", async function (e) {
             e.preventDefault();
@@ -178,7 +182,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             try {
                 const selectedValue = document.getElementById("slot_id").value;
-
                 const data = {
                     license: document.getElementById("license").value,
                     slot_ids: [parseInt(selectedValue)],
@@ -206,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 🔹 licence
+    // licence
     const input = document.getElementById("license");
     const display = document.getElementById("player_name");
     if (input && display) {

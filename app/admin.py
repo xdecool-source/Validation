@@ -103,20 +103,40 @@ def get_slots():
     
 @router.get("/dispos/{match_day_id}")
 def get_dispos(match_day_id: int):
-    with engine.connect() as conn:
-        result = conn.execute(text("""
-            SELECT 
-                p.name,
-                p.ranking,
-                s.label
-            FROM availabilities a
-            JOIN players p ON p.id = a.player_id
-            JOIN match_slots s ON s.id = a.slot_id
-            WHERE s.match_day_id = :day_id
-              AND a.availability = 'disponible'
-            ORDER BY s.label, p.ranking DESC
-        """), {"day_id": match_day_id})
-        return [dict(row._mapping) for row in result]
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text("""
+                SELECT 
+                    p.name,
+                    p.ranking,
+                    STRING_AGG(
+                        s.label || ':' || a.availability,
+                        ','
+                    ) AS slots
+                FROM availabilities a
+                JOIN players p ON p.id = a.player_id
+                JOIN match_slots s ON s.id = a.slot_id
+                WHERE s.match_day_id = :day_id
+                GROUP BY p.name, p.ranking
+                ORDER BY p.ranking DESC
+            """), {"day_id": match_day_id})
+
+            return [dict(row._mapping) for row in result]
+
+            return [
+                {
+                    "name": row[0],
+                    "ranking": row[1],
+                    "label": row[2],
+                    "availability": row[3],
+                }
+                for row in rows
+            ]
+
+    except Exception as e:
+        print("🔥 ERREUR BACKEND:", e)
+        return {"error": str(e)}
+    
     
 @router.get("/player/{license}")
 def get_player(license: str):

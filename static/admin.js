@@ -1,3 +1,5 @@
+let currentSort = "ranking"; // dispo | indispo | ranking
+
 async function loadDays() {
 
     const res = await fetch("/match-days");
@@ -7,6 +9,8 @@ async function loadDays() {
     const todayStr = new Date().toISOString().split("T")[0];
     let closestDayId = null;
     let smallestDiff = Infinity;
+
+
     days.forEach(day => {
         const opt = document.createElement("option");
         opt.value = day.id;
@@ -40,41 +44,114 @@ function formatLabel(label) {
 }
 
 async function loadDispos() {
+    // console.log("SORT:", currentSort);
     const dayId = document.getElementById("match_day_id").value;
     const res = await fetch("/dispos/" + dayId);
     const data = await res.json();
+    window.currentData = data;
+    // console.log("STOCK DATA:", window.currentData);
     const tbody = document.getElementById("table-body");
     tbody.innerHTML = "";
-    data
-        .sort((a, b) => b.ranking - a.ranking) // tri
-        .forEach(row => {
+
+        //
+        if (!Array.isArray(data)) {
+            console.error("Erreur API:", data);
+            return;
+        }
+
+        const count = (row, type) => {
+            if (!row.slots) return 0;
+            return row.slots.split(",").filter(s => {
+                const parts = s.split(":");
+                const availability = parts[1];
+                return availability === type;
+            }).length;
+        };
+        // console.log("SORT ACTUEL:", currentSort);
+        if (currentSort === "dispo") {
+            data.sort((a, b) => {
+                const dispoA = count(a, "disponible");
+                const dispoB = count(b, "disponible");
+                // plus de dispos
+                if (dispoA !== dispoB) return dispoB - dispoA;
+                const indispoA = count(a, "indisponible");
+                const indispoB = count(b, "indisponible");
+                // moins d’indispos
+                if (indispoA !== indispoB) return indispoA - indispoB;
+                // meilleur classement
+                return b.ranking - a.ranking;
+            });
+
+        } else if (currentSort === "indispo") {
+            data.sort((a, b) => {
+                const indispoA = count(a, "indisponible");
+                const indispoB = count(b, "indisponible");
+                //  plus d’indispos
+                if (indispoA !== indispoB) return indispoB - indispoA;
+                const dispoA = count(a, "disponible");
+                const dispoB = count(b, "disponible");
+                // moins de dispos
+                if (dispoA !== dispoB) return dispoA - dispoB;
+                // classement
+                return b.ranking - a.ranking;
+            });
+
+        } else {
+            // TRI PAR CLASSEMENT
+            data.sort((a, b) => b.ranking - a.ranking);
+        }
+        //
+        
+        data.forEach(row => {
+            
             const tr = document.createElement("tr");
+            if (!row.slots) {
+                console.warn("Pas de slots:", row);
+                return;
+            }
+            const slots = row.slots.split(",");
+            const order = ["dimanche_matin", "dimanche_aprem", "samedi_aprem"];
+            // tri des slots
+            slots.sort((a, b) => {
+                const la = a.split(":")[0];
+                const lb = b.split(":")[0];
+                return order.indexOf(la) - order.indexOf(lb);
+            });
+            const badges = slots.map(s => {
+                const [label, availability] = s.split(":");
+                let color = "bg-secondary";
+                if (availability === "disponible") {
+                    color = "bg-success";
+                } else if (availability === "indisponible") {
+                    color = "bg-danger";
+                }
+                return `<span class="badge ${color} me-1">
+                    ${formatLabel(label)}
+                </span>`;
+            }).join(" ");
+
             tr.innerHTML = `
-                <td>${row.name}</td>
+                <td>${row.name || "-"}</td>
                 <td>
-                    <span class="badge bg-primary">${row.ranking}</span>
+                    <span class="badge bg-primary">${row.ranking ?? "-"}</span>
                 </td>
-                <td>
-                    <span class="badge ${
-                        row.availability === "disponible"
-                            ? "bg-success"
-                            : "bg-danger"
-                    }">
-                        ${formatLabel(row.label)}
-                    </span>
-                </td>
+                <td>${badges}</td>
             `;
+
             tbody.appendChild(tr);
         });
 }
 
 // INIT
 document.addEventListener("DOMContentLoaded", async () => {
-    
     await loadDays();
     loadDispos();
-
     document
         .getElementById("match_day_id")
         .addEventListener("change", loadDispos);
 });
+
+function setSort(type) {
+    currentSort = type;
+    loadDispos(); // recharge avec nouveau tri
+}
