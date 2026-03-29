@@ -8,14 +8,11 @@ from openpyxl.styles import Font
 from app.config import settings
 from sqlalchemy import text
 
-
 import io
 import csv
 import os
 
 router = APIRouter()
-
-print("ADMIN ROUTER CHARGÉ")
 
 @router.get("/init-db")
 def init_db():
@@ -30,7 +27,6 @@ def is_admin(x_token: str = Header(None)):
     print("ADMIN KO")
     return {"is_admin": False}
 
-
 @router.get("/joueurs")
 def get_players():
     with engine.connect() as conn:
@@ -39,12 +35,10 @@ def get_players():
             FROM players
             ORDER BY ranking DESC
         """))
-
         joueurs = [
             {"id": row.id, "name": row.name, "ranking": row.ranking}
             for row in result
         ]
-
     return joueurs
 
 @router.get("/match-days")
@@ -74,18 +68,15 @@ def init_match_days():
     print("✅ Match days initialisés")
     return {"message": "Journées configurées"}
     
-
 @router.get("/init-slots")
 def init_slots():
     with engine.begin() as conn:
         for day_id in range(1, 15):
-
             slots = [
                 "samedi_aprem",
                 "dimanche_matin",
                 "dimanche_aprem"
             ]
-
             for label in slots:   
 
                 conn.execute(text("""
@@ -108,7 +99,6 @@ def get_slots():
             JOIN match_days d ON d.id = s.match_day_id
             ORDER BY d.id, s.id
         """))
-
         return [dict(row._mapping) for row in result]
     
 @router.get("/dispos/{match_day_id}")
@@ -126,7 +116,6 @@ def get_dispos(match_day_id: int):
               AND a.availability = 'disponible'
             ORDER BY s.label, p.ranking DESC
         """), {"day_id": match_day_id})
-
         return [dict(row._mapping) for row in result]
     
 @router.get("/player/{license}")
@@ -146,9 +135,7 @@ def get_player(license: str):
 @router.post("/availability")
 def add_availability(data: dict = Body(...)):
     with engine.begin() as conn:
-
         for slot_id in data["slot_ids"]:
-
             conn.execute(text("""
                 INSERT INTO availabilities (player_id, slot_id, availability)
                 SELECT p.id, :slot_id, :availability
@@ -161,7 +148,6 @@ def add_availability(data: dict = Body(...)):
                 "slot_id": slot_id,
                 "availability": data["availability"]
             })
-
     return {"message": "Disponibilités enregistrées"}
     
 @router.get("/export-excel/{match_day_id}")
@@ -209,20 +195,16 @@ def export_excel(match_day_id: int):
             .replace("dimanche_aprem", "Dimanche après-midi")
             .replace("samedi_aprem", "Samedi après-midi")
         )
-
     row_idx = 3  #  on commence plus bas
     order = [
         "samedi_aprem",
         "dimanche_matin",
         "dimanche_aprem"
     ]
-    
     for label in order:
         if label not in grouped:
             continue
-
         players = grouped[label]
-
         ws.cell(row=row_idx, column=1, value=format_label(label))
         row_idx += 1
 
@@ -231,21 +213,15 @@ def export_excel(match_day_id: int):
             ws.cell(row=row_idx, column=2, value=p.ranking)
             row_idx += 1
         row_idx += 1
-
     # export
-    
     from openpyxl.utils import get_column_letter
-
 # auto largeur colonnes
-    
     for col in ws.columns:
         max_length = 0
         col_letter = get_column_letter(col[0].column)
-
         for cell in col:
             if cell.value:
                 max_length = max(max_length, len(str(cell.value)))
-
         ws.column_dimensions[col_letter].width = max_length + 2
 
     stream = io.BytesIO()

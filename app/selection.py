@@ -14,13 +14,11 @@ def generate_team(db, match_day_id, team_size=4):
     players = result.fetchall()
 
     selected = players[:team_size]
-
     for p in selected:
         db.execute("""
             INSERT INTO selections (player_id, match_day_id, team)
             VALUES (%s, %s, %s)
         """, (p.id, match_day_id, "A"))
-
     db.commit()
 
     return selected

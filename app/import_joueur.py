@@ -28,7 +28,6 @@ async def import_joueur(
         # 🔹 Lecture Excel depuis upload
         df = pd.read_excel(file.file, sheet_name=0)
         df.columns = df.columns.str.strip()
-
         players = []
 
         for _, row in df.iterrows():
@@ -39,17 +38,16 @@ async def import_joueur(
 
             if pd.isna(license_number) or pd.isna(last_name):
                 continue
-
             players.append({
                 "license": str(license_number).strip(),
                 "name": f"{first_name} {last_name}".strip(),
                 "ranking": int(points) if not pd.isna(points) else 0
             })
 
-        # 🔥 TRI
+        # Tri
         players.sort(key=lambda x: x["ranking"], reverse=True)
 
-        # 🔥 INSERT / UPDATE
+        # Insert / Update
         with engine.begin() as conn:
             for p in players:
                 conn.execute(text("""

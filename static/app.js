@@ -59,7 +59,7 @@ async function loadData() {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // 🔹 remplir les journées
+        // remplir les journées
 
 
         matchDays.forEach(day => {
@@ -108,9 +108,7 @@ async function loadData() {
 function loadSlotsForDay(dayId) {
     const slotSelect = document.getElementById("slot_id");
     if (!slotSelect) return;
-
     slotSelect.innerHTML = "";
-
     const order = [
         "dimanche_matin",
         "dimanche_aprem",
@@ -211,7 +209,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // 🔹 licence
     const input = document.getElementById("license");
     const display = document.getElementById("player_name");
-
     if (input && display) {
         input.addEventListener("input", async function () {
             clearResult();
@@ -231,7 +228,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error("Erreur player:", err);
             }
         });
-
         input.addEventListener("keydown", function (e) {
             if (e.key === "Enter") {
                 e.preventDefault();
@@ -254,10 +250,8 @@ if (importForm) {
             alert("Choisis un fichier !");
             return;
         }
-
         const formData = new FormData();
         formData.append("file", file);
-
         try {
             const res = await fetch("/import-joueur", {
                 method: "POST",
@@ -266,13 +260,8 @@ if (importForm) {
                 },
                 body: formData
             });
-
-
-
             const data = await res.json();
-
             const msgDiv = document.getElementById("importMessage");
-
             msgDiv.innerHTML = `
                 <div style="
                     background:${data.error ? "#dc3545" : "#198754"};
@@ -290,9 +279,6 @@ if (importForm) {
 setTimeout(() => {
     msgDiv.innerHTML = "";
 }, 3000);
-
-
-
 
         } catch (err) {
             console.error(err);

@@ -5,7 +5,6 @@ from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 from app.config import settings
 
-
 load_dotenv()  # charge le .env
 DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL.startswith("postgres://"):

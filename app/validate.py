@@ -9,41 +9,38 @@ from app.admin import init_match_days, init_slots
 from app.models import Base
 from app import crud
 from app.import_joueur import router as import_router
+from contextlib import asynccontextmanager
 
 import os
 
 app = FastAPI()
-
 app.include_router(admin_router)
 app.include_router(import_router)
-
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
 templates = Jinja2Templates(directory="templates")
 
-print("ROUTES CHARGÉES")
-
 def get_db():
-
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
 
-@app.on_event("startup")
-def on_startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     print("🔄 Vérification / création des tables...")
     Base.metadata.create_all(bind=engine)
     init_match_days()
     init_slots()
     
+    yield  # démarrage terminé
+
+app = FastAPI(lifespan=lifespan)
+    
 @app.post("/availability")
 def create_availability(avail: AvailabilityCreate, db=Depends(get_db)):
     crud.add_availability(db, avail)
     return {"status": "ok"}
-
-templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
