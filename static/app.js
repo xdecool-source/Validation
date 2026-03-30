@@ -202,7 +202,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-});
+
 
 //  Message 
 
