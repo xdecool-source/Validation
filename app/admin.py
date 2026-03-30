@@ -156,41 +156,22 @@ def get_player(license: str):
 
 @router.post("/availability")
 def add_availability(data: dict = Body(...)):
-
-    print("🔥 AVAILABILITY HIT")
-
-    # 🔥 nettoyage licence
-    license_clean = str(data["license"]).strip()
-
-    print("LICENSE REÇUE:", data["license"])
-    print("LICENSE CLEAN:", license_clean)
-
+    print("🔥 AVAILABILITY HIT")  # ✅ ICI
     with engine.begin() as conn:
-
-        # 🔍 DEBUG : vérifier si joueur existe
-        check = conn.execute(text("""
-            SELECT id, license FROM players
-            WHERE TRIM(license) = :license
-        """), {"license": license_clean}).fetchall()
-
-        print("JOUEUR TROUVÉ:", check)
-
         for slot_id in data["slot_ids"]:
             conn.execute(text("""
                 INSERT INTO availabilities (player_id, slot_id, availability)
                 SELECT p.id, :slot_id, :availability
                 FROM players p
-                WHERE TRIM(p.license) = :license
+                WHERE p.license = :license
                 ON CONFLICT (player_id, slot_id)
                 DO UPDATE SET availability = EXCLUDED.availability
             """), {
-                "license": license_clean,
+                "license": data["license"],
                 "slot_id": slot_id,
                 "availability": data["availability"]
             })
-
     return {"message": "Disponibilités enregistrées"}
-
     
 @router.get("/export-excel/{match_day_id}")
 def export_excel(match_day_id: int):
