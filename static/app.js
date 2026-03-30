@@ -43,27 +43,27 @@ async function loadData() {
     try {
         matchDays = await safeFetch("/match-days");
         allSlots = await safeFetch("/slots");
-
         // 👉 gestion match days (si présent)
         const daySelect = document.getElementById("match_day_id");
-
         if (daySelect) {
             daySelect.innerHTML = "";
-
             matchDays.forEach(day => {
                 const option = document.createElement("option");
                 option.value = day.id;
-                option.text = day.code;
+                // 👉 format date (FIABLE)
+                const formattedDate = day.date
+                    ? day.date.split("-").reverse().join("/")
+                    : "";
+
+                option.text = `${day.code} - ${formattedDate}`;
                 daySelect.appendChild(option);
             });
         }
-
         // 👉 🔥 AJOUT IMPORTANT : remplir les slots
         const slotSelect = document.getElementById("slot_id");
 
         if (slotSelect) {
             slotSelect.innerHTML = "";
-
             // 👉 récupérer labels uniques
             const uniqueSlots = [...new Set(allSlots.map(s => s.label))];
 
