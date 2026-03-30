@@ -72,13 +72,21 @@ async function loadDispos() {
             data.sort((a, b) => {
                 const dispoA = count(a, "disponible");
                 const dispoB = count(b, "disponible");
-                // plus de dispos
-                if (dispoA !== dispoB) return dispoB - dispoA;
+
                 const indispoA = count(a, "indisponible");
                 const indispoB = count(b, "indisponible");
-                // moins d’indispos
+
+                // 🥇 PRIORITÉ : 0 indispo (100% dispo)
+                if (indispoA === 0 && indispoB !== 0) return -1;
+                if (indispoB === 0 && indispoA !== 0) return 1;
+
+                // 🥈 ensuite nb de dispos
+                if (dispoA !== dispoB) return dispoB - dispoA;
+
+                // 🥉 ensuite nb d’indispos
                 if (indispoA !== indispoB) return indispoA - indispoB;
-                // meilleur classement
+
+                // 🏁 classement
                 return b.ranking - a.ranking;
             });
 
@@ -155,3 +163,4 @@ function setSort(type) {
     currentSort = type;
     loadDispos(); // recharge avec nouveau tri
 }
+

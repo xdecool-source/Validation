@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from app.database import SessionLocal, engine
@@ -10,10 +10,13 @@ from app.models import Base
 from app import crud
 from app.import_joueur import router as import_router
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
 
 import os
 
-# 👉 lifespan AVANT
+load_dotenv()
+ACCESS_CODE = os.getenv("ACCESS_CODE")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("🔄 Vérification / création des tables...")
@@ -22,17 +25,12 @@ async def lifespan(app: FastAPI):
     init_slots()
     yield
 
-# 👉 UNE SEULE APP
 app = FastAPI(lifespan=lifespan)
 
-# 👉 TOUT configurer APRÈS
 app.include_router(admin_router)
 app.include_router(import_router)
-
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
 templates = Jinja2Templates(directory="templates")
-
 
 def get_db():
     db = SessionLocal()
@@ -40,24 +38,25 @@ def get_db():
         yield db
     finally:
         db.close()
-
-
+        
 @app.post("/availability")
 def create_availability(avail: AvailabilityCreate, db=Depends(get_db)):
     crud.add_availability(db, avail)
     return {"status": "ok"}
 
+@app.get("/admin", response_class=HTMLResponse)
+def admin_page(request: Request):
+    return templates.TemplateResponse("admin.html", {"request": request})
+
+@app.get("/admin-dispo", response_class=HTMLResponse)
+def admin_dispos(request: Request):
+    return templates.TemplateResponse("admin_dispo.html", {"request": request})
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse("user.html", {"request": request})
 
+@app.get("/check-access")
+def check_access(code: str):
+    return {"ok": code == ACCESS_CODE}
 
-@app.get("/admin", response_class=HTMLResponse)
-def admin_page(request: Request):
-    return templates.TemplateResponse("admin.html", {"request": request})
-
-
-@app.get("/admin-dispo", response_class=HTMLResponse)
-def admin_dispos(request: Request):
-    return templates.TemplateResponse("admin_dispo.html", {"request": request})

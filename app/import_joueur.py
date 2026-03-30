@@ -23,19 +23,22 @@ async def import_joueur(
     x_token: str = Header(None)
 ):
     check_admin(x_token)  
+    if file.filename != "export.xlsx":
+        raise HTTPException(status_code=400, detail="Nom de fichier invalide")
 
     try:
         # 🔹 Lecture Excel depuis upload
-        df = pd.read_excel(file.file, sheet_name=0)
+        df = pd.read_excel(file.file, sheet_name=0, dtype=str)
         df.columns = df.columns.str.strip()
         players = []
 
         for _, row in df.iterrows():
-            license_number = row.iloc[0]
-            last_name = row.iloc[2]
-            first_name = row.iloc[3]
+            license_number = str(row.iloc[0]).strip()
+            last_name = str(row.iloc[2]).strip() if row.iloc[2] else ""
+            first_name = str(row.iloc[3]).strip() if row.iloc[3] else ""
             points = row.iloc[15]
-            email = row.iloc[23]
+            email = str(row.iloc[23]).strip() if row.iloc[23] else ""
+            ranking = int(points) if points and points.isdigit() else 0
 
             if pd.isna(license_number) or pd.isna(last_name):
                 continue

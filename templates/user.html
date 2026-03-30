@@ -2,124 +2,109 @@
 <html>
 <head>
     <title>Disponibilité Ping</title>
-
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <style>
-        body {
-            background-color: #404a53 !important;
-        }
-    </style>
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/style.css">
 </head>
-
 <body>
 
-<div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+<!-- Code Pin -->
+<div style="position:absolute; top:10px; right:10px;">
+    <div id="pinContainer">
+        <input type="text" maxlength="1" class="pin" inputmode="numeric">
+        <input type="text" maxlength="1" class="pin" inputmode="numeric">
+        <input type="text" maxlength="1" class="pin" inputmode="numeric">
+        <input type="text" maxlength="1" class="pin" inputmode="numeric">
+    </div>
+</div>
 
-    <div class="card shadow p-4 w-100" style="max-width: 420px; border-radius: 16px;">
+<!-- App Disponibilité -->
+<div id="appContent" style="display:none;">
+    <div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+        <div class="card shadow p-4 w-100" style="max-width: 420px; border-radius: 16px;">
+            
+            <h2 class="text-center mb-4">🏓 Disponibilité Championnat</h2>
 
-        <h2 class="text-center mb-4">🏓 Disponibilité Championnat</h2>
+            <form id="form">
+                <div style="max-width: 300px; margin: auto;">
 
-        <form id="form">
+                    <!-- Licence -->
+                    <div class="mb-3">
+                        <label class="form-label">N° de licence</label>
+                        <input type="text" id="license" class="form-control text-center" required>
+                    </div>
 
-            <div style="max-width: 300px; margin: auto;">
+                    <div id="player_name" class="mb-1 fw-bold text-center"></div>
+                    <div id="player_info" class="mb-3 text-center small text-muted"></div>
 
-                <!-- Licence -->
-                <div class="mb-3">
-                    <label class="form-label">N° de licence</label>
-                    <input type="text" id="license" class="form-control text-center" required>
-                </div>
-
-                <div id="player_name" class="mb-1 fw-bold text-center"></div>
-                <div id="player_info" class="mb-3 text-center small text-muted"></div>
-
-                <!-- Journée + Date -->
-                <div class="row g-2 mb-3">
-                    <div class="col-6">
+                    <!-- Journée -->
+                    <div class="mb-3">
                         <label>Journée</label>
                         <select id="match_day_id" class="form-select"></select>
                     </div>
 
-                    <div class="col-6">
-                        <label>Date</label>
-                        <div id="match_day_date" class="form-control bg-light text-center"></div>
+                    <!-- Créneau -->
+                    <div class="mb-3">
+                        <label>Créneau</label>
+                        <select id="slot_id" class="form-select"></select>
+                    </div>
+
+                    <!-- Disponibilité -->
+                    <div class="mb-4">
+                        <label>Disponibilité</label>
+                        <select id="availability" class="form-select">
+                            <option value="disponible">✅ Disponible</option>
+                            <option value="indisponible">❌ Indisponible</option>
+                        </select>
+                    </div>
+
+                    <!-- Bouton -->
+                    <div class="text-center">
+                        <button type="submit" id="submitBtn"
+                            class="rounded-circle d-flex align-items-center justify-content-center"
+                            style="
+                                width:20px;
+                                height:20px;
+                                background: linear-gradient(135deg, #22955c, #09ed7b);
+                                color:white;
+                                border:none;
+                                box-shadow: 0 4px 12px rgba(13, 152, 69, 0.831);
+                                transition: 0.2s;
+                            ">
+                            <i class="bi bi-check-lg"></i>
+                        </button>
                     </div>
                 </div>
+            </form>
 
-                <!-- Créneau -->
-                <div class="mb-3">
-                    <label class="form-label">Créneau</label>
-                    <select id="slot_id" class="form-select"></select>
-                </div>
+            <div id="result" class="mt-3 text-center fw-bold"></div>
 
-                <!-- Disponibilité -->
-                <div class="mb-4">
-                    <label class="form-label">Disponibilité</label>
-                    <select id="availability" class="form-select">
-                        <option value="disponible">✅ Disponible</option>
-                        <option value="indisponible">❌ Indisponible</option>
-                    </select>
-                </div>
-
-                <!-- Bouton -->
-                <div class="text-center">
-                    <button type="submit" id="submitBtn" class="btn btn-primary px-4 py-2" style="border-radius: 10px;">
-                        <span id="btnText">Valider</span>
-                        <span id="btnLoader" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+            <!-- 🔥 SECTION ADMIN (AJOUTÉE ICI) -->
+            <form id="importForm" class="mt-3">
+                <div class="d-flex align-items-center gap-2">
+                    <!-- input natif -->
+                    <input type="file" id="fileInput" class="form-control form-control-sm">
+                    <!-- bouton icône -->
+                    <button type="submit" class="btn btn-success btn-sm" title="Importer">
+                        ⬆️
                     </button>
                 </div>
+            </form>
+            <div id="importMessage" class="small mt-2 text-center"></div>
+            <!-- 🔥 FIN SECTION ADMIN -->
 
-            </div>
-        </form>
-        <!-- Résultat -->
-        <div id="result" class="mt-3 text-center fw-bold"></div>
-
-
-<!-- 🔐 ADMIN -->
-<hr class="my-4">
-
-<div id="adminSection" 
-     style="display:none; background:#f8f9fa; padding:8px 10px; border-radius:8px; border:1px solid #e0e0e0; max-width:260px; margin:auto;">
-
-    <form id="importForm">
-    <div class="d-flex align-items-center gap-2">
-
-        <!-- 🔐 à gauche -->
-        <div style="font-size:14px;">
-            🔐
         </div>
-
-        <!-- input fichier -->
-        <input type="file" id="fileInput" 
-               class="form-control form-control-sm flex-grow-1"
-               style="font-size:11px;">
-
-        <!-- bouton -->
-        <button type="submit" 
-                class="btn btn-warning btn-sm px-2"
-                style="font-size:11px;">
-            ⬆️
-        </button>
-
     </div>
-</form>
 </div>
-</div> <!-- card -->
-</div> <!-- container -->
 
+<!-- JS -->
+<script src="/static/pin.js"></script>
 <script src="/static/app.js"></script>
 
-<div id="importMessage" 
-     style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
-            max-width: 300px; z-index: 9999;">
-</div>
-
 <div style="position:fixed; bottom:5px; right:10px; font-size:11px; opacity:0.5; color: white;">
-    Tennis de Table Thuirinois XDC Version: v1.2
+Tennis de Table Thuirinois XDC Validation Version: v1.3
 </div>
-
 </body>
 </html>
