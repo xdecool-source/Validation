@@ -21,11 +21,13 @@ def init_db():
 
 @router.get("/is-admin")
 def is_admin(x_token: str = Header(None)):
-    if x_token == os.getenv("ADMIN_TOKEN"):
-        print("ADMIN OK")
-        return {"is_admin": True}
-    print("ADMIN KO")
-    return {"is_admin": False}
+
+    admin_token = os.getenv("ADMIN_TOKEN")
+
+    print("HEADER:", x_token)
+    print("ENV:", admin_token)
+
+    return {"is_admin": x_token == admin_token}
 
 @router.get("/joueurs")
 def get_players():
