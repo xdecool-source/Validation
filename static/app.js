@@ -112,16 +112,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     const resultDiv = document.getElementById("result");
 
+                    const nameDiv = document.getElementById("player_name");
+                    const infoDiv = document.getElementById("player_info");
+
                     if (data.name) {
-                        resultDiv.innerHTML = `
-                            <div class="alert alert-success">
-                                Joueur trouvé : <b>${data.name}</b>
-                            </div>`;
+                        nameDiv.textContent = data.name;
+                        infoDiv.textContent = "✔ Joueur trouvé";
                     } else {
-                        resultDiv.innerHTML = `
-                            <div class="alert alert-danger">
-                                Licence inconnue
-                            </div>`;
+                        nameDiv.textContent = "";
+                        infoDiv.textContent = "Licence inconnue";
                     }
 
                 } catch (err) {
