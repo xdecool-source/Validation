@@ -71,21 +71,31 @@ document.addEventListener("DOMContentLoaded", () => {
         form.addEventListener("input", clearResult);
         form.addEventListener("submit", async function (e) {
             e.preventDefault();
-            if (!isAdmin) {
-                alert("Accès interdit");
-                return;
-            }
             try {
                 const data = {
                     license: document.getElementById("license").value,
                     slot_ids: [parseInt(document.getElementById("slot_id").value)],
                     availability: document.getElementById("availability").value
                 };
+
+
+                const headers = {
+                    "Content-Type": "application/json"
+                };
+
+                // 👉 si admin, on ajoute le token
+                if (isAdmin) {
+                    headers["x-token"] = ADMIN_TOKEN;
+                }
+
                 const response = await fetch("/availability", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: headers,
                     body: JSON.stringify(data)
                 });
+
+
+
                 const result = await response.json();
                 document.getElementById("result").innerHTML = `
                     <div class="alert ${response.ok ? "alert-success" : "alert-danger"}">
