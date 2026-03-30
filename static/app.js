@@ -93,36 +93,51 @@ document.addEventListener("DOMContentLoaded", () => {
     const licenseInput = document.getElementById("license");
 
     if (licenseInput) {
-        licenseInput.addEventListener("blur", async () => {
+
+        let timeout;
+
+        licenseInput.addEventListener("input", () => {
+
+            clearTimeout(timeout);
 
             const license = licenseInput.value.trim();
-            if (!license) return;
 
-            try {
-                const res = await fetch(`/player/${license}`);
-                const data = await res.json();
+            if (license.length < 3) return;
 
-                console.log("JOUEUR:", data);
+            timeout = setTimeout(async () => {
 
-                const resultDiv = document.getElementById("result");
+                try {
+                    const res = await fetch(`/player/${license}`);
+                    const data = await res.json();
 
-                if (data.name) {
-                    resultDiv.innerHTML = `
-                        <div class="alert alert-success">
-                            Joueur trouvé : <b>${data.name}</b>
-                        </div>`;
-                } else {
-                    resultDiv.innerHTML = `
-                        <div class="alert alert-danger">
-                            Licence inconnue
-                        </div>`;
+                    const resultDiv = document.getElementById("result");
+
+                    if (data.name) {
+                        resultDiv.innerHTML = `
+                            <div class="alert alert-success">
+                                Joueur trouvé : <b>${data.name}</b>
+                            </div>`;
+                    } else {
+                        resultDiv.innerHTML = `
+                            <div class="alert alert-danger">
+                                Licence inconnue
+                            </div>`;
+                    }
+
+                } catch (err) {
+                    console.error(err);
                 }
 
-            } catch (err) {
-                console.error(err);
-            }
+            }, 300); // anti-spam API
         });
     }
+
+
+
+
+
+
+
 
     if (form) {
         form.addEventListener("input", clearResult);

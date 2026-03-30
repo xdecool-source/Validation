@@ -152,7 +152,6 @@ def get_player(license: str):
 
 @router.post("/availability")
 def add_availability(data: dict = Body(...)):
-    print("🔥 AVAILABILITY HIT")  # ✅ ICI
     with engine.begin() as conn:
         for slot_id in data["slot_ids"]:
             conn.execute(text("""
