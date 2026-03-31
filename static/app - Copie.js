@@ -81,7 +81,7 @@ async function loadData() {
         const container = document.getElementById("matchDaysContainer");
         if (container) {
             container.innerHTML = "";
-            container.classList.add("slots-container"); 
+            container.style.marginTop = "20px"; // 👈 AJOUT ICI
             const slots = [
                 { id: 1, label: "Samedi après-midi" },
                 { id: 2, label: "Dimanche matin" },
@@ -95,7 +95,10 @@ async function loadData() {
                 checkbox.checked = true;
                 const label = document.createElement("label");
                 label.textContent = slot.label;
-                wrapper.classList.add("slot-row");
+                wrapper.style.display = "flex";
+                wrapper.style.justifyContent = "space-between";
+                wrapper.style.maxWidth = "250px";
+                wrapper.style.marginBottom = "6px";
                 wrapper.appendChild(label);
                 wrapper.appendChild(checkbox);
                 container.appendChild(wrapper);
@@ -119,16 +122,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (daySelect) {
         const label = document.querySelector("label[for='match_day_id']");
         if (label) {
-            label.classList.add("label-day");
+            label.style.fontWeight = "bold";
         }
         const parent = daySelect.parentElement;
-        parent.classList.add("day-container");
+        parent.style.border = "1px solid #ccc";
+        parent.style.padding = "10px";
+        parent.style.borderRadius = "8px";
+        parent.style.marginBottom = "15px";
     }
     const form = document.getElementById("form");
     if (form) {
     const submitBtn = form.querySelector("button[type='submit']");
     if (submitBtn) {
-        submitBtn.classList.add("submit-btn");// 👈 descend le bouton
+        submitBtn.style.marginTop = "40px"; // 👈 descend le bouton
     }
 }
     // 👉 auto détection joueur

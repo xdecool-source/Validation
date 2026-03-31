@@ -153,21 +153,56 @@ def get_player(license: str):
 @router.post("/availability")
 def add_availability(data: dict = Body(...)):
     with engine.begin() as conn:
-        for slot_id in data["slot_ids"]:
+
+        # ✅ vérifier joueur
+        player = conn.execute(text("""
+            SELECT id FROM players WHERE license = :license
+        """), {"license": data["license"]}).fetchone()
+
+        if not player:
+            return {"error": "Licence invalide"}
+
+        player_id = player.id
+
+        # 🔍 récupérer les slots de la journée
+        slots_db = conn.execute(text("""
+            SELECT id, label
+            FROM match_slots
+            WHERE match_day_id = :day_id
+        """), {"day_id": data["match_day_id"]}).fetchall()
+
+        slot_map = {row.label: row.id for row in slots_db}
+
+        label_map = {
+            1: "samedi_aprem",
+            2: "dimanche_matin",
+            3: "dimanche_aprem"
+        }
+
+        for slot in data["slots"]:
+            front_id = slot["slot_id"]
+            available = slot["available"]
+
+            label = label_map.get(front_id)
+            if label not in slot_map:
+                continue
+
+            slot_id = slot_map[label]
+
             conn.execute(text("""
                 INSERT INTO availabilities (player_id, slot_id, availability)
-                SELECT p.id, :slot_id, :availability
-                FROM players p
-                WHERE p.license = :license
+                VALUES (:player_id, :slot_id, :availability)
                 ON CONFLICT (player_id, slot_id)
                 DO UPDATE SET availability = EXCLUDED.availability
             """), {
-                "license": data["license"],
+                "player_id": player_id,
                 "slot_id": slot_id,
-                "availability": data["availability"]
+                "availability": "disponible" if available else "indisponible"
             })
+
     return {"message": "Disponibilités enregistrées"}
-    
+
+
 @router.get("/export-excel/{match_day_id}")
 def export_excel(match_day_id: int):
     with engine.connect() as conn:

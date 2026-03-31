@@ -46,32 +46,3 @@ body {
     75% { transform: translateX(-3px); }
     100% { transform: translateX(0); }
 }
-
-/* Appli Globale */
-
-.day-container {
-    border: 1px solid #ccc;
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 15px;
-}
-
-.slots-container {
-    margin-top: 20px;
-}
-
-.slot-row {
-    display: flex;
-    justify-content: space-between;
-    max-width: 250px;
-    margin-bottom: 6px;
-}
-
-.submit-btn {
-    margin-top: 40px;
-}
-
-.label-day {
-    font-weight: bold;
-}
-

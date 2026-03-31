@@ -1,3 +1,4 @@
+// Gestion du code PIN à 4 chiffres
 
 window.addEventListener("DOMContentLoaded", () => {
 

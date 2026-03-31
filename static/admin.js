@@ -1,3 +1,5 @@
+// visualisation des dispos
+
 let currentSort = "ranking"; // dispo | indispo | ranking
 
 async function loadDays() {
