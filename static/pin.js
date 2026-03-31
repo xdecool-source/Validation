@@ -15,19 +15,32 @@ window.addEventListener("DOMContentLoaded", () => {
             const code = Array.from(inputs).map(i => i.value).join("");
             if (code.length !== 4) return;
             try {
-                const res = await fetch("/check-access?code=" + code);
+                const res = await fetch("/check-access?code=" + code, {
+                credentials: "include" // 🔐 IMPORTANT XX
+                });
                 const data = await res.json();
+                console.log("Réponse PIN:", data); // 👈 ICI
+
                 if (data.ok) {
                     document.getElementById("appContent").style.display = "block";
                     document.getElementById("pinContainer").style.display = "none";
                     if (typeof initFileInput === "function") {
                         initFileInput();
                     }
-                    // 🔥 RELOAD PROPRE DE L’APP
-                    if (typeof loadData === "function") {
-                        loadData();
-                    }
-                } else {
+
+                    // 🔥 attendre cookie
+                    setTimeout(() => {
+                        if (typeof checkAdmin === "function") {
+                            checkAdmin();
+                        }
+
+                        if (typeof loadData === "function") {
+                            loadData();
+                        }
+                    }, 200);
+                }
+
+                else {
                     alert("Code incorrect ❌");
                     inputs.forEach(i => i.value = "");
                     inputs[0].focus();

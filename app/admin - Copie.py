@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Body, Header, Response, Cookie, HTTPException
-from fastapi import Request, UploadFile, File
+from fastapi import APIRouter, Body, Header
+from fastapi import UploadFile, File
 from fastapi.responses import StreamingResponse
 from app.database import engine
 from app.models import Base
@@ -7,14 +7,10 @@ from openpyxl import Workbook
 from openpyxl.styles import Font
 from app.config import settings
 from sqlalchemy import text
-from dotenv import load_dotenv
-from time import time
 
 import io
 import csv
 import os
-
-attempts = {}
 
 router = APIRouter()
 
@@ -24,15 +20,13 @@ def init_db():
     return {"message": "Tables créées"}
 
 @router.get("/is-admin")
-def is_admin(session: str = Cookie(None)):
-    return {"is_admin": session == "admin"}
+def is_admin(x_token: str = Header(None)):
+
+    admin_token = os.getenv("ADMIN_TOKEN")
+    return {"is_admin": x_token == admin_token}
 
 @router.get("/joueurs")
-def get_players(session: str = Cookie(None)):
-
-    if session not in ["user", "admin"]:
-        raise HTTPException(status_code=403, detail="Accès interdit")
-    
+def get_players():
     with engine.connect() as conn:
         result = conn.execute(text("""
             SELECT id, name, ranking
@@ -156,12 +150,8 @@ def get_player(license: str):
         else:
             return {"name": None}
 
-
 @router.post("/availability")
-def add_availability(data: dict = Body(...), session: str = Cookie(None)):
-    # 🔐 sécurité
-    if session not in ["user", "admin"]:
-        raise HTTPException(status_code=403, detail="Accès interdit")
+def add_availability(data: dict = Body(...)):
     with engine.begin() as conn:
 
         # ✅ vérifier joueur
@@ -170,7 +160,7 @@ def add_availability(data: dict = Body(...), session: str = Cookie(None)):
         """), {"license": data["license"]}).fetchone()
 
         if not player:
-            raise HTTPException(status_code=400, detail="Licence invalide")
+            return {"error": "Licence invalide"}
 
         player_id = player.id
 
@@ -189,18 +179,11 @@ def add_availability(data: dict = Body(...), session: str = Cookie(None)):
             3: "dimanche_aprem"
         }
 
-        # 🔥 👉 METTRE LES PRINTS ICI
-        print("SLOT MAP:", slot_map)
-        print("LABEL MAP:", label_map)
-
         for slot in data["slots"]:
-            
-            
             front_id = slot["slot_id"]
             available = slot["available"]
 
             label = label_map.get(front_id)
-
             if label not in slot_map:
                 continue
 
@@ -218,8 +201,6 @@ def add_availability(data: dict = Body(...), session: str = Cookie(None)):
             })
 
     return {"message": "Disponibilités enregistrées"}
-
-
 
 
 @router.get("/export-excel/{match_day_id}")
@@ -308,61 +289,3 @@ def export_excel(match_day_id: int):
         }
     )
     
-    
-load_dotenv()
-PIN_CODE = os.getenv("PIN_CODE")
-if not PIN_CODE:
-    raise Exception("PIN_CODE non défini !")
-ADMIN_PIN = os.getenv("ADMIN_PIN")
-MAX_ATTEMPTS = 5
-BLOCK_TIME = 300  # 5 min
-
-@router.get("/check-access")
-def check_access(code: str, request: Request, response: Response):
-    print("PIN_CODE:", PIN_CODE)
-    print("ADMIN_PIN:", ADMIN_PIN)
-    print("CODE SAISI:", code)
-
-    ip = request.client.host
-    now = time()
-
-    # 🧠 init IP
-    if ip not in attempts:
-        attempts[ip] = {"count": 0, "blocked_until": 0}
-
-    # 🚫 bloqué temporairement
-    if attempts[ip]["blocked_until"] > now:
-        raise HTTPException(
-            status_code=429,
-            detail="Trop de tentatives. Réessaie dans quelques minutes."
-        )
-
-    # ❌ mauvais PIN (ni user ni admin)
-    if code != PIN_CODE and code != ADMIN_PIN:
-        attempts[ip]["count"] += 1
-
-        if attempts[ip]["count"] >= MAX_ATTEMPTS:
-            attempts[ip]["blocked_until"] = now + BLOCK_TIME
-            attempts[ip]["count"] = 0
-
-        return {"ok": False}
-
-    # ✅ reset
-    attempts[ip] = {"count": 0, "blocked_until": 0}
-
-    # 🔥 rôle
-    role = "admin" if code == ADMIN_PIN else "user"
-    
-    # 🔥 IMPORTANT : supprimer ancien cookie
-    response.delete_cookie("session")
-
-    response.set_cookie(
-        key="session",
-        value=role,
-        httponly=True,
-        samesite="Lax",
-        max_age=300  # 5 min
-        # secure=True
-    )
-
-    return {"ok": True}
