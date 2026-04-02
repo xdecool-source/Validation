@@ -1,20 +1,47 @@
 // gestion Excel 
 
 function exportExcel() {
-
+    console.log("EXPORT LANCÉ");
+    console.log("CLICK OK");
     const data = window.currentData;
+    console.log("DATA:", data);
+    console.log("SLOTS RAW:", data.map(d => d.slots));
+
     if (!Array.isArray(data)) {
         console.error("Pas de données pour export", data);
         return;
     }
+        
     const count = (row, type) => {
         if (!row.slots) return 0;
 
         return row.slots.split(",").filter(s => {
-            const availability = s.split(":")[1];
-            return availability === type;
+
+            const parts = s.split(":");
+            console.log("SLOT BRUT:", s);        // 👈 ICI
+            console.log("PARTS:", parts);        // 👈 ICI
+
+            const raw = parts[1];
+            const val = raw ? raw.trim().toLowerCase() : "";
+
+            console.log("VAL NETTOYÉE:", val);   // 👈 ICI
+
+            const isAvailable = val === "true" || val === "1";
+
+            return type === "disponible" ? isAvailable : !isAvailable;
+    
+
         }).length;
     };
+    // 👉 AJOUTE ICI 👇
+    data.forEach(p => {
+        console.log(
+            p.name,
+            count(p, "disponible"),
+            count(p, "indisponible"),
+            p.slots
+        );
+    });
     // CLASSEMENT
     const rankingData = [...data].sort((a, b) => b.ranking - a.ranking);
     // DISPO
@@ -44,7 +71,10 @@ function exportExcel() {
         Dispos: count(r, "disponible"),
         Indispos: count(r, "indisponible"),
         Créneaux: r.slots
+            ?.replaceAll("true", "disponible")
+            .replaceAll("false", "indisponible")
     }));
+
     const wb = XLSX.utils.book_new();
     // Classement
     let formatted = format(rankingData);

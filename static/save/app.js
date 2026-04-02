@@ -4,27 +4,6 @@ let playerValid = false;
 
 // Mode Admin
 
-let token = localStorage.getItem("token");
-
-
-
-async function login(code) {
-    const res = await fetch(`/check-access?code=${code}`);
-    const data = await res.json();
-
-    console.log("LOGIN RESPONSE:", data);
-
-    if (data.ok) {
-        token = data.token;
-
-        // 🔥 STOCKAGE
-        localStorage.setItem("token", token);
-
-        console.log("TOKEN STOCKÉ:", token);
-    } else {
-        alert("Code incorrect");
-    }
-}
 async function checkAdmin() {
 
     try {
@@ -103,6 +82,46 @@ function applySlots(slots) {
     });
 }
 
+const importForm = document.getElementById("importForm");
+
+if (importForm) {
+    importForm.addEventListener("submit", async (e) => {
+        e.preventDefault(); // 🔥 empêche le reload
+
+        const fileInput = document.getElementById("fileInput");
+        const message = document.getElementById("importMessage");
+
+        if (!fileInput.files.length) {
+            message.textContent = "⚠️ Aucun fichier sélectionné";
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        try {
+            const res = await fetch("/import-joueur", {
+                method: "POST",
+                body: formData,
+                credentials: "include", // 🔥 CRUCIAL
+            });
+
+            if (!res.ok) {
+                throw new Error("Erreur serveur: " + res.status);
+            }
+
+            const data = await res.json();
+
+            message.textContent =
+                data.message || data.error || "Import terminé";
+
+        } catch (err) {
+            console.error(err);
+            message.textContent = "❌ Erreur import";
+        }
+    });
+}
+
 // Chargement data
 
 async function loadData() {
@@ -172,7 +191,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     checkAdmin();
     loadData();
-   
 
     setTimeout(() => {
         const input = document.getElementById("license");
@@ -181,7 +199,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const daySelect = document.getElementById("match_day_id");
     if (daySelect) {
         daySelect.addEventListener("change", () => {
-            updateAvailabilityUI(); // 🔥 SUFFIT
+            if (!window.currentAvailability) return;
+            const selectedDay = parseInt(daySelect.value);
+            const dayData = window.currentAvailability.find(d =>
+                String(d.match_day_id) === String(selectedDay)
+            );
+            if (dayData) {
+                applySlots(dayData.slots);
+            }
         });
     }
 
@@ -200,9 +225,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
                 const slots = Array.from(
                     document.querySelectorAll("#matchDaysContainer input")
-                )
-                .map(cb => ({
-                    label: cb.dataset.label,
+                ).map(cb => ({
+                    slot_id: parseInt(cb.value),
                     available: cb.checked
                 }));
                 const data = {
@@ -210,16 +234,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     match_day_id: selectedDay,
                     slots: slots
                 };
-                // 🔥 ICI (IMPORTANT)
-                console.log("TOKEN AVANT ENVOI:", token);
                 const response = await fetch("/availability", {
                     method: "POST",
+                    credentials: "include",
                     headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`
+                        "Content-Type": "application/json"
                     },
                     body: JSON.stringify(data)
-                    
                 });
                 const result = await response.json();
                 document.getElementById("result").innerHTML = `
@@ -277,7 +298,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
                     console.log("RESPONSE:", res); // 🔥 AJOUT
                     const data = await res.json();
-                    console.log("DATA BACKEND:", data);
                     const nameDiv = document.getElementById("player_name");
                     const infoDiv = document.getElementById("player_info");
 
@@ -289,20 +309,21 @@ document.addEventListener("DOMContentLoaded", () => {
                             infoDiv.textContent = "✔ Déjà enregistré (modifiable)";
                             window.currentAvailability = data.availability;
                             setSlotsDisabled(false); // 🔥 ACTIVE
-                            updateAvailabilityUI(); // 🔥 CLEAN
                             const selectedDay = parseInt(
                                 document.getElementById("match_day_id").value
                             );
                             const dayData = data.availability.find(d =>
                                 parseInt(d.match_day_id) === selectedDay
                             );
-
+                            if (dayData) {
+                                applySlots(dayData.slots);
+                            }
                         } else {
                             infoDiv.textContent = "🕒 Aucune saisie effectuée";
                             window.currentAvailability = null;
                             setSlotsDisabled(false); // 🔥 IMPORTANT → ACTIVER
                             console.log("ACTIVATION FORCÉE");
-                            updateAvailabilityUI(); // 🔥 CLEAN
+                            resetSlots(); // vide les cases
                         }
                     } else {
                         nameDiv.textContent = "";
@@ -317,48 +338,3 @@ document.addEventListener("DOMContentLoaded", () => {
         });       
     }
 });
-
-function displayAvailability(slots) {
-    const infoDiv = document.getElementById("player_info");
-
-    if (!slots || slots.length === 0) {
-        infoDiv.textContent = "🕒 Aucune saisie effectuée";
-        return;
-    }
-
-    const text = slots.map(slot => {
-        const label = slot.label
-            .replace("_", " ")
-            .replace("aprem", "après-midi");
-
-        return `${label} : ${slot.available ? "✅ disponible" : "❌ indisponible"}`;
-    });
-
-    infoDiv.innerHTML = text.join("<br>");
-}
-
-function updateAvailabilityUI() {
-    console.log("CURRENT AVAILABILITY:", window.currentAvailability);
-
-    if (!window.currentAvailability) {
-        resetSlots();
-        displayAvailability([]);
-        return;
-    }
-
-    const selectedDay = parseInt(
-        document.getElementById("match_day_id").value
-    );
-    console.log("SELECTED DAY:", selectedDay); // 👈 AJOUT
-    const dayData = window.currentAvailability.find(d =>
-        parseInt(d.match_day_id) === selectedDay
-    );
-    console.log("DAY DATA:", dayData); // 👈 AJOUT
-    if (dayData) {
-        applySlots(dayData.slots);
-        // displayAvailability(dayData.slots);
-    } else {
-        resetSlots();
-        // displayAvailability([]);
-    }
-}

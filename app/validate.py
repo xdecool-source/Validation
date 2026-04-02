@@ -10,12 +10,8 @@ from app.models import Base
 from app import crud
 from app.import_joueur import router as import_router
 from contextlib import asynccontextmanager
-from dotenv import load_dotenv
 
 import os
-
-load_dotenv()
-ACCESS_CODE = os.getenv("ACCESS_CODE")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,6 +27,7 @@ app.include_router(admin_router)
 app.include_router(import_router)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
 
 def get_db():
     db = SessionLocal()

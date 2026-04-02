@@ -1,4 +1,4 @@
-from fastapi import UploadFile, File, APIRouter, Header, HTTPException
+from fastapi import UploadFile, File, APIRouter, Header, HTTPException, Request
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
@@ -7,25 +7,20 @@ import os
 
 load_dotenv()
 
+# remplace ADMIN_TOKEN par ADMIN_PIN
 router = APIRouter()
-ADMIN_TOKEN = os.getenv("ADMIN_TOKEN")
-
-def check_admin(x_token: str):
-    if x_token != ADMIN_TOKEN:
-        raise HTTPException(status_code=403, detail="Accès interdit")
+ADMIN_PIN = os.getenv("ADMIN_PIN")
     
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
 
 @router.post("/import-joueur")
 async def import_joueur(
-    file: UploadFile = File(...),
-    x_token: str = Header(None)
+    request: Request,
+    file: UploadFile = File(...)
 ):
-    check_admin(x_token)  
-    if file.filename != "export.xlsx":
-        raise HTTPException(status_code=400, detail="Nom de fichier invalide")
-
+    if not request.session.get("admin"):
+        raise HTTPException(status_code=403)
     try:
         # 🔹 Lecture Excel depuis upload
         df = pd.read_excel(file.file, sheet_name=0, dtype=str)

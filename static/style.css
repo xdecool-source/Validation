@@ -1,77 +1,191 @@
+/* =========================
+   GLOBAL
+========================= */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
 body {
-    background-color: #56616d;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+    background: linear-gradient(180deg, #4e5964, #3e4750);
 }
 
-/* PIN container */
-#pinContainer {
+/* =========================
+   CONTAINER
+========================= */
+#appContent {
     display: flex;
-    gap: 6px;
+    justify-content: center;
+    padding: 20px 12px;
 }
 
-/* cases */
-#pinContainer {
-    display: flex;
-    gap: 4px;
-    justify-content: flex-end;
+/* =========================
+   CARD (STYLE IOS)
+========================= */
+.card {
+    width: 100%;
+    max-width: 320px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 22px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+
+    animation: fadeInUp 0.5s ease;
 }
 
-.pin {
-    width: 24px !important;
-    height: 28px !important;
-    font-size: 13px !important;
-    padding: 0 !important;
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================
+   TITRE
+========================= */
+h2 {
+    font-size: 20px;
+    font-weight: 00;
+    margin-bottom: 20px;
+}
+
+/* =========================
+   INPUT
+========================= */
+
+#license {
+    width: 160px;        /* largeur contrôlée */
+    margin: 6px auto;
+
     text-align: center;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-}
+    font-size: 14px;     /* plus compact */
+    letter-spacing: 1px;
+    font-weight: bold; 
 
-/* focus plus propre */
-.pin:focus {
-    border-color: #0d6efd;
-    outline: none;
-    box-shadow: 0 0 3px rgba(13,110,253,0.5);
-}
-
-/* erreur */
-.pin.error {
-    border-color: #dc3545;
-    animation: shake 0.25s;
-}
-
-/* animation */
-@keyframes shake {
-    0% { transform: translateX(0); }
-    25% { transform: translateX(-3px); }
-    50% { transform: translateX(3px); }
-    75% { transform: translateX(-3px); }
-    100% { transform: translateX(0); }
-}
-
-/* Appli Globale */
-
-.day-container {
-    border: 1px solid #ccc;
-    padding: 10px;
+    padding: 4px 8px;    /* réduit la hauteur */
+    
     border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+.form-control {
+    border-radius: 12px;
+    padding: 10px;
+    font-size: 15px;
+}
+
+/* =========================
+   SELECT
+========================= */
+select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid #ccc;
     margin-bottom: 15px;
 }
 
-.slots-container {
-    margin-top: 20px;
-}
 
+/* =========================
+   SWITCH (remplace checkbox)
+========================= */
 .slot-row {
     display: flex;
     justify-content: space-between;
-    max-width: 250px;
-    margin-bottom: 6px;
+    align-items: center;
+    margin-bottom: 10px;
 }
 
-.submit-btn {
-    margin-top: 40px;
+.slot-row input {
+    appearance: none;
+    width: 42px;
+    height: 24px;
+    background: #ccc;
+    border-radius: 50px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.3s ease;
 }
 
-.label-day {
-    font-weight: bold;
+.slot-row input:checked {
+    background: #34c759;
 }
 
+.slot-row input::before {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s ease;
+}
+
+.slot-row input:checked::before {
+    transform: translateX(18px);
+}
+
+/* =========================
+   BUTTON
+========================= */
+button {
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+button:active {
+    transform: scale(0.9);
+}
+
+button:hover {
+    transform: translateY(-2px);
+}
+
+.btn-primary {
+    background: #007aff;
+    border: none;
+}
+
+.btn-primary:active {
+    transform: scale(0.97);
+}
+
+/* =========================
+   RESULT
+========================= */
+.alert {
+    animation: pop 0.6s ease;
+}
+
+@keyframes pop {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+/* =========================
+   PIN
+========================= */
+#pinContainer {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+
+.pin {
+    width: 28px;
+    height: 32px;
+    text-align: center;
+    border-radius: 6px;
+}

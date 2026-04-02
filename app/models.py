@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Index, UniqueConstraint
 from sqlalchemy.orm import declarative_base
 
+
 Base = declarative_base()
 
 class Player(Base):
@@ -35,12 +36,14 @@ class MatchSlot(Base):
 
 class Availability(Base):
     __tablename__ = "availabilities"
+
     id = Column(Integer, primary_key=True)
     player_id = Column(Integer, ForeignKey("players.id"))
     slot_id = Column(Integer, ForeignKey("match_slots.id"))
-    availability = Column(String)
+    match_day_id = Column(Integer, ForeignKey("match_days.id"), nullable=False)
+    availability = Column(Boolean)
     __table_args__ = (
-        UniqueConstraint("player_id", "slot_id", name="unique_player_slot"),
+        UniqueConstraint("player_id", "slot_id", "match_day_id", name="unique_player_slot_day"),
     )
 
 class Selection(Base):

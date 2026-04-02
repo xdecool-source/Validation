@@ -1,4 +1,4 @@
-// Gestion du code PIN à 4 chiffres
+// Gestion du code PIN à 6 chiffres
 
 window.addEventListener("DOMContentLoaded", () => {
 
@@ -13,7 +13,7 @@ window.addEventListener("DOMContentLoaded", () => {
                 inputs[index + 1].focus();
             }
             const code = Array.from(inputs).map(i => i.value).join("");
-            if (code.length !== 4) return;
+            if (code.length !== 6) return;
             try {
                 const res = await fetch("/check-access?code=" + code, {
                 credentials: "include" // 🔐 IMPORTANT XX

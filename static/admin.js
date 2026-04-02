@@ -1,4 +1,4 @@
-// visualisation des dispos
+// visualisation des dispos 
 
 let currentSort = "ranking"; // dispo | indispo | ranking
 
@@ -63,12 +63,21 @@ async function loadDispos() {
 
         const count = (row, type) => {
             if (!row.slots) return 0;
+
             return row.slots.split(",").filter(s => {
                 const parts = s.split(":");
-                const availability = parts[1];
-                return availability === type;
+                const val = parts[parts.length - 1]?.trim().toLowerCase();
+
+                const isDispo =
+                    val === "true" ||
+                    val === "1" ||
+                    val === "disponible";
+
+                return type === "disponible" ? isDispo : !isDispo;
+
             }).length;
         };
+
         // console.log("SORT ACTUEL:", currentSort);
         if (currentSort === "dispo") {
             data.sort((a, b) => {
@@ -108,6 +117,7 @@ async function loadDispos() {
 
         } else {
             // TRI PAR CLASSEMENT
+            console.log("RANKINGS:", data.map(d => d.ranking));
             data.sort((a, b) => b.ranking - a.ranking);
         }
         //
@@ -128,13 +138,29 @@ async function loadDispos() {
                 return order.indexOf(la) - order.indexOf(lb);
             });
             const badges = slots.map(s => {
-                const [label, availability] = s.split(":");
+
+
+                const parts = s.split(":");
+                const label = parts[0];
+                const val = parts[parts.length - 1]?.trim().toLowerCase();
+
                 let color = "bg-secondary";
-                if (availability === "disponible") {
+
+                const isDispo =
+                    val === "true" ||
+                    val === "1" ||
+                    val === "disponible";
+
+                if (isDispo) {
                     color = "bg-success";
-                } else if (availability === "indisponible") {
+                } else {
                     color = "bg-danger";
-                }
+}
+
+
+
+
+
                 return `<span class="badge ${color} me-1">
                     ${formatLabel(label)}
                 </span>`;
@@ -162,6 +188,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function setSort(type) {
+    console.log("CLICK SORT:", type); // 👈 AJOUTE ÇA
     currentSort = type;
     loadDispos(); // recharge avec nouveau tri
 }

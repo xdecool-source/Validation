@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Body, Header, Response, Cookie, HTTPException
-from fastapi import Request, UploadFile, File
+from fastapi import APIRouter, Body, Response, Cookie, HTTPException, Request, Header
 from fastapi.responses import StreamingResponse
 from app.database import engine
 from app.models import Base
@@ -9,30 +8,95 @@ from app.config import settings
 from sqlalchemy import text
 from dotenv import load_dotenv
 from time import time
+from fastapi import Depends
+from datetime import datetime, timedelta
 
 import io
-import csv
 import os
+import jwt
 
 attempts = {}
 
 router = APIRouter()
+
+# =========================
+# INIT DB
+# =========================
 
 @router.get("/init-db")
 def init_db():
     Base.metadata.create_all(bind=engine)
     return {"message": "Tables créées"}
 
+# =========================
+# CONFIG
+# =========================
+
+load_dotenv()
+
+PIN_CODE = os.getenv("PIN_CODE")
+ADMIN_PIN = os.getenv("ADMIN_PIN")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise Exception("SECRET_KEY non défini !")
+
+# Json Web Token
+
+def create_token(role):
+    payload = {
+        "role": role,
+        "exp": datetime.utcnow() + timedelta(hours=4)
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+
+
+def verify_token(authorization: str = Header(None)):
+
+    if not authorization:
+        raise HTTPException(status_code=403, detail="Token manquant")
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=403, detail="Format invalide")
+    try:
+        token = authorization.replace("Bearer ", "")
+        data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        return data.get("role")
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=403, detail="Token expiré")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=403, detail="Token invalide")
+
+
+# Login Pin = pour voir si Admin ou user
+
+@router.get("/check-access")
+def check_access(code: str):
+
+    if code == ADMIN_PIN:
+        return {"ok": True, "token": create_token("admin")}
+
+    if code == PIN_CODE:
+        return {"ok": True, "token": create_token("user")}
+
+    return {"ok": False}
+
+
+# Verification Admin
+
 @router.get("/is-admin")
-def is_admin(session: str = Cookie(None)):
+def is_admin(request: Request):
+    session = request.cookies.get("session")
     return {"is_admin": session == "admin"}
 
+
+# Joueurs 
+
 @router.get("/joueurs")
-def get_players(session: str = Cookie(None)):
+def get_players(request: Request):
+    session = request.cookies.get("session")
 
     if session not in ["user", "admin"]:
         raise HTTPException(status_code=403, detail="Accès interdit")
-    
+
     with engine.connect() as conn:
         result = conn.execute(text("""
             SELECT id, name, ranking
@@ -45,6 +109,9 @@ def get_players(session: str = Cookie(None)):
         ]
     return joueurs
 
+
+# Jour des Matchs
+
 @router.get("/match-days")
 def get_match_days():
     with engine.connect() as conn:
@@ -54,7 +121,9 @@ def get_match_days():
             ORDER BY id
         """))
         return [dict(row._mapping) for row in result]
-    
+
+# Initialisation 
+
 @router.get("/init-match-days")
 def init_match_days():
     with engine.begin() as conn:
@@ -68,10 +137,13 @@ def init_match_days():
                     is_home = EXCLUDED.is_home,
                     day_type = EXCLUDED.day_type
             """), day)
-            
-    print("✅ Match days initialisés")
+
+    print(" Match days initialisés")
     return {"message": "Journées configurées"}
-    
+
+
+# Jour a selectionner
+
 @router.get("/init-slots")
 def init_slots():
     with engine.begin() as conn:
@@ -81,18 +153,20 @@ def init_slots():
                 "dimanche_matin",
                 "dimanche_aprem"
             ]
-            for label in slots:   
-
+            for label in slots:
                 conn.execute(text("""
                     INSERT INTO match_slots (match_day_id, label)
                     VALUES (:day_id, :label)
                     ON CONFLICT (match_day_id, label) DO NOTHING
                 """), {
                     "day_id": day_id,
-                    "label": label   
+                    "label": label
                 })
+
     print("✅ Slots initialisés")
     return {"message": "Slots créés"}
+
+# Pour un future si app dynamique
 
 @router.get("/slots")
 def get_slots():
@@ -104,7 +178,10 @@ def get_slots():
             ORDER BY d.id, s.id
         """))
         return [dict(row._mapping) for row in result]
-    
+
+
+# DISPOS
+
 @router.get("/dispos/{match_day_id}")
 def get_dispos(match_day_id: int):
     try:
@@ -127,103 +204,109 @@ def get_dispos(match_day_id: int):
 
             return [dict(row._mapping) for row in result]
 
-            return [
-                {
-                    "name": row[0],
-                    "ranking": row[1],
-                    "label": row[2],
-                    "availability": row[3],
-                }
-                for row in rows
-            ]
-
     except Exception as e:
         print("🔥 ERREUR BACKEND:", e)
         return {"error": str(e)}
-    
-    
+
+
+# Joueurs
+
 @router.get("/player/{license}")
 def get_player(license: str):
     with engine.connect() as conn:
-        result = conn.execute(text("""
-            SELECT name
+
+        player = conn.execute(text("""
+            SELECT id, name
             FROM players
             WHERE license = :license
         """), {"license": license}).fetchone()
 
-        if result:
-            return {"name": result.name}
-        else:
+        if not player:
             return {"name": None}
 
+        rows = conn.execute(text("""
+            SELECT 
+                a.match_day_id,
+                s.label,
+                a.availability
+            FROM availabilities a
+            JOIN match_slots s ON s.id = a.slot_id
+            WHERE a.player_id = :player_id
+        """), {"player_id": player.id}).fetchall()
+
+        availability = {}
+
+        for row in rows:
+            day_id = row.match_day_id
+            if day_id not in availability:
+                availability[day_id] = []
+            availability[day_id].append({
+                "label": row.label,
+                "available": row.availability
+            })
+        availability_list = [
+            {
+                "match_day_id": day_id,
+                "slots": slots
+            }
+            for day_id, slots in availability.items()
+        ]
+        return {
+            "name": player.name,
+            "availability": availability_list
+        }
+
+# Availability
 
 @router.post("/availability")
-def add_availability(data: dict = Body(...), session: str = Cookie(None)):
-    # 🔐 sécurité
-    if session not in ["user", "admin"]:
-        raise HTTPException(status_code=403, detail="Accès interdit")
-    with engine.begin() as conn:
+def add_availability(
+    data: dict = Body(...),
+    role: str = Depends(verify_token)
+):
 
-        # ✅ vérifier joueur
+    print("ROLE:", role)
+    print("DATA:", data)
+    with engine.begin() as conn:
         player = conn.execute(text("""
             SELECT id FROM players WHERE license = :license
         """), {"license": data["license"]}).fetchone()
-
         if not player:
             raise HTTPException(status_code=400, detail="Licence invalide")
-
         player_id = player.id
-
-        # 🔍 récupérer les slots de la journée
         slots_db = conn.execute(text("""
             SELECT id, label
             FROM match_slots
             WHERE match_day_id = :day_id
         """), {"day_id": data["match_day_id"]}).fetchall()
-
         slot_map = {row.label: row.id for row in slots_db}
-
-        label_map = {
-            1: "samedi_aprem",
-            2: "dimanche_matin",
-            3: "dimanche_aprem"
-        }
-
-        # 🔥 👉 METTRE LES PRINTS ICI
         print("SLOT MAP:", slot_map)
-        print("LABEL MAP:", label_map)
 
         for slot in data["slots"]:
-            
-            
-            front_id = slot["slot_id"]
+            label = slot["label"]
             available = slot["available"]
-
-            label = label_map.get(front_id)
-
             if label not in slot_map:
                 continue
-
             slot_id = slot_map[label]
-
             conn.execute(text("""
-                INSERT INTO availabilities (player_id, slot_id, availability)
-                VALUES (:player_id, :slot_id, :availability)
-                ON CONFLICT (player_id, slot_id)
+                INSERT INTO availabilities (player_id, slot_id, match_day_id, availability)
+                VALUES (:player_id, :slot_id, :match_day_id, :availability)
+                ON CONFLICT (player_id, slot_id, match_day_id)
                 DO UPDATE SET availability = EXCLUDED.availability
             """), {
                 "player_id": player_id,
                 "slot_id": slot_id,
-                "availability": "disponible" if available else "indisponible"
+                "match_day_id": data["match_day_id"],
+                "availability": available
             })
 
     return {"message": "Disponibilités enregistrées"}
 
 
-
+# Export Excel
 
 @router.get("/export-excel/{match_day_id}")
 def export_excel(match_day_id: int):
+
     with engine.connect() as conn:
         result = conn.execute(text("""
             SELECT 
@@ -240,62 +323,29 @@ def export_excel(match_day_id: int):
 
         rows = result.fetchall()
 
-    # création Excel
-    # création Excel
     wb = Workbook()
     ws = wb.active
     ws.title = f"J{match_day_id}"
-
-    # EN-TÊTE GLOBAL
     bold = Font(bold=True)
-
-    cell1 = ws.cell(row=1, column=1, value="Prénom Nom")
-    cell2 = ws.cell(row=1, column=2, value="Points")
-
-    cell1.font = bold
-    cell2.font = bold
-
-    # regrouper par créneau
+    ws.cell(row=1, column=1, value="Prénom Nom").font = bold
+    ws.cell(row=1, column=2, value="Points").font = bold
     grouped = {}
     for row in rows:
         grouped.setdefault(row.label, []).append(row)
 
-    def format_label(label):
-        return (
-            label
-            .replace("dimanche_matin", "Dimanche matin")
-            .replace("dimanche_aprem", "Dimanche après-midi")
-            .replace("samedi_aprem", "Samedi après-midi")
-        )
-    row_idx = 3  #  on commence plus bas
-    order = [
-        "samedi_aprem",
-        "dimanche_matin",
-        "dimanche_aprem"
-    ]
+    row_idx = 3
+    order = ["samedi_aprem", "dimanche_matin", "dimanche_aprem"]
+
     for label in order:
         if label not in grouped:
             continue
-        players = grouped[label]
-        ws.cell(row=row_idx, column=1, value=format_label(label))
+        ws.cell(row=row_idx, column=1, value=label)
         row_idx += 1
-
-        for p in players:
+        for p in grouped[label]:
             ws.cell(row=row_idx, column=1, value=p.name)
             ws.cell(row=row_idx, column=2, value=p.ranking)
             row_idx += 1
         row_idx += 1
-    # export
-    from openpyxl.utils import get_column_letter
-# auto largeur colonnes
-    for col in ws.columns:
-        max_length = 0
-        col_letter = get_column_letter(col[0].column)
-        for cell in col:
-            if cell.value:
-                max_length = max(max_length, len(str(cell.value)))
-        ws.column_dimensions[col_letter].width = max_length + 2
-
     stream = io.BytesIO()
     wb.save(stream)
     stream.seek(0)
@@ -307,62 +357,3 @@ def export_excel(match_day_id: int):
             "Content-Disposition": f"attachment; filename=journee_{match_day_id}.xlsx"
         }
     )
-    
-    
-load_dotenv()
-PIN_CODE = os.getenv("PIN_CODE")
-if not PIN_CODE:
-    raise Exception("PIN_CODE non défini !")
-ADMIN_PIN = os.getenv("ADMIN_PIN")
-MAX_ATTEMPTS = 5
-BLOCK_TIME = 300  # 5 min
-
-@router.get("/check-access")
-def check_access(code: str, request: Request, response: Response):
-    print("PIN_CODE:", PIN_CODE)
-    print("ADMIN_PIN:", ADMIN_PIN)
-    print("CODE SAISI:", code)
-
-    ip = request.client.host
-    now = time()
-
-    # 🧠 init IP
-    if ip not in attempts:
-        attempts[ip] = {"count": 0, "blocked_until": 0}
-
-    # 🚫 bloqué temporairement
-    if attempts[ip]["blocked_until"] > now:
-        raise HTTPException(
-            status_code=429,
-            detail="Trop de tentatives. Réessaie dans quelques minutes."
-        )
-
-    # ❌ mauvais PIN (ni user ni admin)
-    if code != PIN_CODE and code != ADMIN_PIN:
-        attempts[ip]["count"] += 1
-
-        if attempts[ip]["count"] >= MAX_ATTEMPTS:
-            attempts[ip]["blocked_until"] = now + BLOCK_TIME
-            attempts[ip]["count"] = 0
-
-        return {"ok": False}
-
-    # ✅ reset
-    attempts[ip] = {"count": 0, "blocked_until": 0}
-
-    # 🔥 rôle
-    role = "admin" if code == ADMIN_PIN else "user"
-    
-    # 🔥 IMPORTANT : supprimer ancien cookie
-    response.delete_cookie("session")
-
-    response.set_cookie(
-        key="session",
-        value=role,
-        httponly=True,
-        samesite="Lax",
-        max_age=300  # 5 min
-        # secure=True
-    )
-
-    return {"ok": True}
