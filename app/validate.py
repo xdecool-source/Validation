@@ -3,13 +3,12 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from app.database import SessionLocal, engine
-from app.schemas import AvailabilityCreate
 from app.admin import router as admin_router
 from app.admin import init_match_days, init_slots
 from app.models import Base
-from app import crud
 from app.import_joueur import router as import_router
 from contextlib import asynccontextmanager
+from app.schemas import AvailabilityCreate
 
 import os
 
