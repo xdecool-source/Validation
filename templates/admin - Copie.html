@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin</title>
+</head>
+<body>
+
+<h2>Import joueurs</h2>
+
+<input type="file" id="fileInput">
+<button onclick="upload()">Importer</button>
+
+<script>
+let token = "";
+
+// 🔐 1. Login admin
+async function login() {
+    const code = prompt("Entre le code admin :");
+
+    const res = await fetch(`/check-access?code=${code}`);
+    const data = await res.json();
+
+    if (data.ok) {
+        token = data.token;
+        alert("Connecté en admin ✅");
+    } else {
+        alert("Code incorrect ❌");
+    }
+}
+
+// 📤 2. Upload fichier
+async function upload() {
+
+    if (!token) {
+        alert("Tu dois te connecter d'abord !");
+        return;
+    }
+
+    const fileInput = document.getElementById("fileInput");
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    const res = await fetch("/import-joueur", {
+        method: "POST",
+        headers: {
+            "Authorization": "Bearer " + token
+        },
+        body: formData
+    });
+
+    const data = await res.json();
+    console.log(data);
+
+    alert(data.message || data.error);
+}
+
+// 🔥 lance login au chargement
+login();
+</script>
+
+</body>
+</html>

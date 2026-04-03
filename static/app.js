@@ -1,6 +1,7 @@
 let matchDays = [];
 let isAdmin = false;
 let playerValid = false;
+let isUpdatingUI = false;
 
 // Mode Admin
 
@@ -20,7 +21,7 @@ async function login(code) {
         // 🔥 STOCKAGE
         localStorage.setItem("token", token);
 
-        console.log("TOKEN STOCKÉ:", token);
+        console.log("TOKEN STOCKÉ:", localStorage.getItem("token")); // 🔥 IMPORTANT
     } else {
         alert("Code incorrect");
     }
@@ -90,17 +91,27 @@ function resetSlots() {
 }
 
 function applySlots(slots) {
+    console.log("SLOTS BACKEND:", slots);
 
-    if (!slots || slots.length === 0) return;
     const checkboxes = document.querySelectorAll("#matchDaysContainer input");
-    checkboxes.forEach(cb => cb.checked = false);
+
+    checkboxes.forEach(cb => {
+        console.log("CHECKBOX LABEL:", cb.dataset.label);
+    });
+
     slots.forEach(slot => {
+        console.log("SLOT LABEL:", slot.label);
+        console.log("TYPE AVAILABLE:", typeof slot.available, slot.available);
         const cb = Array.from(checkboxes)
             .find(c => c.dataset.label === slot.label);
+
+        console.log("MATCH FOUND:", cb);
+
         if (cb) {
             cb.checked = slot.available;
         }
     });
+    console.log("AFTER APPLY:", Array.from(checkboxes).map(cb => cb.checked));
 }
 
 // Chargement data
@@ -179,11 +190,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (input) input.focus();
     }, 300);
     const daySelect = document.getElementById("match_day_id");
-    if (daySelect) {
+     if (daySelect) {
         daySelect.addEventListener("change", () => {
-            updateAvailabilityUI(); // 🔥 SUFFIT
+            // 🔥 ne fait quelque chose QUE si on a des données
+            if (window.currentAvailability) {
+                updateAvailabilityUI();
+            }
         });
-    }
+     }
 
     const form = document.getElementById("form");
     if (form) {
@@ -216,8 +230,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`
-                    },
+                        "Authorization": `Bearer ${localStorage.getItem("token")}`                    },
                     body: JSON.stringify(data)
                     
                 });
@@ -268,7 +281,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Reset avant le Fetch 
                 setSlotsDisabled(true);
-                resetSlots();
+                // xxx resetSlots();
                 window.currentAvailability = null;
 
                 try {
@@ -288,6 +301,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (data.availability && data.availability.length > 0) {
                             infoDiv.textContent = "✔ Déjà enregistré (modifiable)";
                             window.currentAvailability = data.availability;
+                            // xxx
+                            setTimeout(() => {
+                                updateAvailabilityUI();
+                            }, 0);
                             setSlotsDisabled(false); // 🔥 ACTIVE
                             updateAvailabilityUI(); // 🔥 CLEAN
                             const selectedDay = parseInt(
@@ -338,27 +355,31 @@ function displayAvailability(slots) {
 }
 
 function updateAvailabilityUI() {
+    if (isUpdatingUI) return; // 🔥 bloque double appel
+    isUpdatingUI = true;
+
     console.log("CURRENT AVAILABILITY:", window.currentAvailability);
 
+    const checkboxes = document.querySelectorAll("#matchDaysContainer input");
+
+    checkboxes.forEach(cb => cb.checked = false);
+
     if (!window.currentAvailability) {
-        resetSlots();
-        displayAvailability([]);
+        isUpdatingUI = false;
         return;
     }
 
     const selectedDay = parseInt(
         document.getElementById("match_day_id").value
     );
-    console.log("SELECTED DAY:", selectedDay); // 👈 AJOUT
+
     const dayData = window.currentAvailability.find(d =>
         parseInt(d.match_day_id) === selectedDay
     );
-    console.log("DAY DATA:", dayData); // 👈 AJOUT
-    if (dayData) {
+
+    if (dayData && dayData.slots) {
         applySlots(dayData.slots);
-        // displayAvailability(dayData.slots);
-    } else {
-        resetSlots();
-        // displayAvailability([]);
     }
+
+    isUpdatingUI = false;
 }

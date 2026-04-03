@@ -9,8 +9,17 @@ from app.models import Base
 from app.import_joueur import router as import_router
 from contextlib import asynccontextmanager
 from app.schemas import AvailabilityCreate
+from dotenv import load_dotenv
 
 import os
+
+load_dotenv()
+
+PIN_CODE = os.getenv("PIN_CODE")
+ADMIN_PIN = os.getenv("ADMIN_PIN")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise Exception("SECRET_KEY non défini !")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,11 +43,6 @@ def get_db():
         yield db
     finally:
         db.close()
-        
-@app.post("/availability")
-def create_availability(avail: AvailabilityCreate, db=Depends(get_db)):
-    crud.add_availability(db, avail)
-    return {"status": "ok"}
 
 @app.get("/admin", response_class=HTMLResponse)
 def admin_page(request: Request):
@@ -54,5 +58,5 @@ def home(request: Request):
 
 @app.get("/check-access")
 def check_access(code: str):
-    return {"ok": code == ACCESS_CODE}
+    return {"ok": code == PIN_CODE}
 

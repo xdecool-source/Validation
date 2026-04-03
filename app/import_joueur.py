@@ -1,6 +1,9 @@
-from fastapi import UploadFile, File, APIRouter, Header, HTTPException, Request
+from fastapi import UploadFile, File, APIRouter, HTTPException
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
+
+from fastapi import Depends
+from app.auth import verify_token
 
 import pandas as pd
 import os
@@ -16,13 +19,13 @@ engine = create_engine(DATABASE_URL)
 
 @router.post("/import-joueur")
 async def import_joueur(
-    request: Request,
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    role: str = Depends(verify_token)
 ):
-    if not request.session.get("admin"):
+    if role != "admin":
         raise HTTPException(status_code=403)
+
     try:
-        # 🔹 Lecture Excel depuis upload
         df = pd.read_excel(file.file, sheet_name=0, dtype=str)
         df.columns = df.columns.str.strip()
         players = []
@@ -33,21 +36,19 @@ async def import_joueur(
             first_name = str(row.iloc[3]).strip() if row.iloc[3] else ""
             points = row.iloc[15]
             email = str(row.iloc[23]).strip() if row.iloc[23] else ""
-            ranking = int(points) if points and points.isdigit() else 0
 
             if pd.isna(license_number) or pd.isna(last_name):
                 continue
+
             players.append({
-                "license": str(license_number).strip(),
+                "license": license_number,
                 "name": f"{first_name} {last_name}".strip(),
-                "ranking": int(points) if not pd.isna(points) else 0,
-                "email": f"{email}".strip()
+                "ranking": int(points) if points and str(points).isdigit() else 0,
+                "email": email
             })
 
-        # Tri
         players.sort(key=lambda x: x["ranking"], reverse=True)
 
-        # Insert / Update
         with engine.begin() as conn:
             for p in players:
                 conn.execute(text("""
@@ -66,3 +67,4 @@ async def import_joueur(
 
     except Exception as e:
         return {"error": str(e)}
+    

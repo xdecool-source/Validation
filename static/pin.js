@@ -22,6 +22,8 @@ window.addEventListener("DOMContentLoaded", () => {
                 console.log("Réponse PIN:", data); // 👈 ICI
 
                 if (data.ok) {
+                    localStorage.setItem("token", data.token);
+                    console.log("TOKEN STOCKÉ:", data.token);
                     document.getElementById("appContent").style.display = "block";
                     document.getElementById("pinContainer").style.display = "none";
                     if (typeof initFileInput === "function") {
