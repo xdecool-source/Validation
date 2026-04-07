@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from app.database import SessionLocal, engine
 from app.admin import router as admin_router
-from app.admin import init_match_days
+from app.admin import init_match_days, init_slots
 from app.models import Base
 from app.import_joueur import router as import_router
 from contextlib import asynccontextmanager
@@ -25,6 +25,7 @@ async def lifespan(app: FastAPI):
     print("🔄 Vérification / création des tables...")
     Base.metadata.create_all(bind=engine)
     init_match_days()
+    init_slots()
     yield
 
 app = FastAPI(lifespan=lifespan)

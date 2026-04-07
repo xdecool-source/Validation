@@ -12,7 +12,6 @@ async function loadDays() {
     let closestDayId = null;
     let smallestDiff = Infinity;
 
-
     days.forEach(day => {
         const opt = document.createElement("option");
         opt.value = day.id;
@@ -60,21 +59,17 @@ async function loadDispos() {
             console.error("Erreur API:", data);
             return;
         }
-
         const count = (row, type) => {
             if (!row.slots) return 0;
-
             return row.slots.split(",").filter(s => {
                 const parts = s.split(":");
                 const val = parts[parts.length - 1]?.trim().toLowerCase();
-
                 const isDispo =
                     val === "true" ||
                     val === "1" ||
                     val === "disponible";
 
                 return type === "disponible" ? isDispo : !isDispo;
-
             }).length;
         };
 
@@ -83,21 +78,16 @@ async function loadDispos() {
             data.sort((a, b) => {
                 const dispoA = count(a, "disponible");
                 const dispoB = count(b, "disponible");
-
                 const indispoA = count(a, "indisponible");
                 const indispoB = count(b, "indisponible");
-
-                // 🥇 PRIORITÉ : 0 indispo (100% dispo)
+                //  PRIORITÉ : 0 indispo (100% dispo)
                 if (indispoA === 0 && indispoB !== 0) return -1;
                 if (indispoB === 0 && indispoA !== 0) return 1;
-
-                // 🥈 ensuite nb de dispos
+                //  ensuite nb de dispos
                 if (dispoA !== dispoB) return dispoB - dispoA;
-
-                // 🥉 ensuite nb d’indispos
+                //  ensuite nb d’indispos
                 if (indispoA !== indispoB) return indispoA - indispoB;
-
-                // 🏁 classement
+                //  classement
                 return b.ranking - a.ranking;
             });
 
@@ -116,8 +106,8 @@ async function loadDispos() {
             });
 
         } else {
-            // TRI PAR CLASSEMENT
-            console.log("RANKINGS:", data.map(d => d.ranking));
+            // Tri par classement
+            // console.log("RANKINGS:", data.map(d => d.ranking));
             data.sort((a, b) => b.ranking - a.ranking);
         }
         //
@@ -138,29 +128,19 @@ async function loadDispos() {
                 return order.indexOf(la) - order.indexOf(lb);
             });
             const badges = slots.map(s => {
-
-
                 const parts = s.split(":");
                 const label = parts[0];
                 const val = parts[parts.length - 1]?.trim().toLowerCase();
-
                 let color = "bg-secondary";
-
                 const isDispo =
                     val === "true" ||
                     val === "1" ||
                     val === "disponible";
-
                 if (isDispo) {
                     color = "bg-success";
                 } else {
                     color = "bg-danger";
 }
-
-
-
-
-
                 return `<span class="badge ${color} me-1">
                     ${formatLabel(label)}
                 </span>`;
@@ -173,7 +153,6 @@ async function loadDispos() {
                 </td>
                 <td>${badges}</td>
             `;
-
             tbody.appendChild(tr);
         });
 }
@@ -188,8 +167,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function setSort(type) {
-    console.log("CLICK SORT:", type); // 👈 AJOUTE ÇA
+    // console.log("CLICK SORT:", type); 
     currentSort = type;
     loadDispos(); // recharge avec nouveau tri
 }
-

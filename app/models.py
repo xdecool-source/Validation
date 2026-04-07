@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Index, UniqueConstraint
 from sqlalchemy.orm import declarative_base
 
-
 Base = declarative_base()
 
 class Player(Base):
@@ -21,7 +20,6 @@ class MatchDay(Base):
     id = Column(Integer, primary_key=True)
     code = Column(String)
     date = Column(String)
-    is_home = Column(Boolean)
     day_type = Column(String)
     
 class MatchSlot(Base):

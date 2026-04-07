@@ -12,7 +12,6 @@
             align-items: center;
             height: 100vh;
         }
-
         .card {
             background: #1e293b;
             padding: 30px;
@@ -20,11 +19,9 @@
             width: 320px;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
-
         h2 {
             text-align: center;
         }
-
         button {
             width: 100%;
             padding: 10px;
@@ -33,16 +30,13 @@
             border-radius: 6px;
             cursor: pointer;
         }
-
         .login { background: #3b82f6; color: white; }
         .upload { background: #22c55e; color: white; }
         .logout { background: #ef4444; color: white; }
-
         input {
             width: 100%;
             margin-top: 10px;
         }
-
         .status {
             text-align: center;
             margin-top: 10px;
@@ -54,27 +48,20 @@
 
 <div class="card">
     <h2>Admin Panel TT Thuirinois</h2>
-
     <button class="login" onclick="login()">Connexion</button>
-
     <input type="file" id="fileInput">
     <button class="upload" onclick="upload()">Importer joueurs</button>
-
     <button class="logout" onclick="logout()">Déconnexion</button>
-
     <div class="status" id="status"></div>
 </div>
-
 <script>
-
 function setStatus(msg) {
     document.getElementById("status").innerText = msg;
 }
 
-// 🔐 LOGIN
+//  Login
 async function login() {
     const code = prompt("Code admin :");
-
     const res = await fetch(`/check-access?code=${code}`);
     const data = await res.json();
 
@@ -87,26 +74,21 @@ async function login() {
     }
 }
 
-// 📤 UPLOAD
+// Chargement
 async function upload() {
 
     let token = localStorage.getItem("access");
-
     if (!token) {
         setStatus("⚠️ Connecte-toi d'abord");
         return;
     }
-
     const fileInput = document.getElementById("fileInput");
-
     if (!fileInput.files.length) {
         setStatus("⚠️ Aucun fichier");
         return;
     }
-
     const formData = new FormData();
     formData.append("file", fileInput.files[0]);
-
     let res = await fetch("/import-joueur", {
         method: "POST",
         headers: {
@@ -115,11 +97,10 @@ async function upload() {
         body: formData
     });
 
-    // 🔁 refresh automatique si token expiré
+    // refresh automatique si token expiré
     if (res.status === 401) {
         await refreshToken();
         token = localStorage.getItem("access");
-
         res = await fetch("/import-joueur", {
             method: "POST",
             headers: {
@@ -130,21 +111,18 @@ async function upload() {
     }
 
     const data = await res.json();
-
     if (data.message) {
         setStatus(`✅ ${data.message} (${data.nb || 0} joueurs)`);
-
-        // 🧹 reset du fichier
+        // reset du fichier
         fileInput.value = "";
     } else {
         setStatus("❌ " + data.error);
     }
 }
 
-// 🔁 REFRESH TOKEN
+//  Gestion Code 
 async function refreshToken() {
     const refresh = localStorage.getItem("refresh");
-
     const res = await fetch("/refresh", {
         method: "POST",
         headers: {
@@ -152,7 +130,6 @@ async function refreshToken() {
         },
         body: JSON.stringify({ refresh_token: refresh })
     });
-
     const data = await res.json();
     localStorage.setItem("access", data.access_token);
 }
@@ -162,13 +139,11 @@ function logout() {
     localStorage.clear();
     setStatus("Déconnecté");
 }
-
 // 🔍 état au chargement
 if (localStorage.getItem("access")) {
     setStatus("🟢 Déjà connecté");
 }
 
 </script>
-
 </body>
 </html>

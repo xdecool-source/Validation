@@ -19,18 +19,14 @@ attempts = {}
 
 router = APIRouter()
 
-# =========================
-# INIT DB
-# =========================
+# Initialisation BD
 
 @router.get("/init-db")
 def init_db():
     Base.metadata.create_all(bind=engine)
     return {"message": "Tables créées"}
 
-# =========================
-# CONFIG
-# =========================
+# Config
 
 load_dotenv()
 
@@ -48,7 +44,6 @@ def create_token(role):
         "exp": datetime.utcnow() + timedelta(hours=4)
     }
     return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
-
 
 def verify_token(authorization: str = Header(None)):
 
@@ -73,20 +68,9 @@ def check_access(code: str):
 
     if code == ADMIN_PIN:
         return {"ok": True, "token": create_token("admin")}
-
     if code == PIN_CODE:
         return {"ok": True, "token": create_token("user")}
-
     return {"ok": False}
-
-
-# Verification Admin
-
-@router.get("/is-admin")
-def is_admin(request: Request):
-    session = request.cookies.get("session")
-    return {"is_admin": session == "admin"}
-
 
 # Joueurs 
 
@@ -141,7 +125,6 @@ def init_match_days():
     print(" Match days initialisés")
     return {"message": "Journées configurées"}
 
-
 # Jour a selectionner
 
 @router.get("/init-slots")
@@ -180,7 +163,7 @@ def get_slots():
         return [dict(row._mapping) for row in result]
 
 
-# DISPOS
+# Dispo
 
 @router.get("/dispos/{match_day_id}")
 def get_dispos(match_day_id: int):
@@ -201,13 +184,11 @@ def get_dispos(match_day_id: int):
                 GROUP BY p.name, p.ranking
                 ORDER BY p.ranking DESC
             """), {"day_id": match_day_id})
-
             return [dict(row._mapping) for row in result]
 
     except Exception as e:
         print("🔥 ERREUR BACKEND:", e)
         return {"error": str(e)}
-
 
 # Joueurs
 
@@ -300,7 +281,6 @@ def add_availability(
             })
 
     return {"message": "Disponibilités enregistrées"}
-
 
 # Export Excel
 

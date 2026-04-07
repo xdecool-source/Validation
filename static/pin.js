@@ -15,22 +15,20 @@ window.addEventListener("DOMContentLoaded", () => {
             const code = Array.from(inputs).map(i => i.value).join("");
             if (code.length !== 6) return;
             try {
-                const res = await fetch("/check-access?code=" + code, {
-                credentials: "include" // 🔐 IMPORTANT XX
-                });
+                const res = await fetch("/check-access?code=" + code);
                 const data = await res.json();
-                console.log("Réponse PIN:", data); // 👈 ICI
+                // console.log("Réponse PIN:", data); 
 
                 if (data.ok) {
                     localStorage.setItem("token", data.token);
-                    console.log("TOKEN STOCKÉ:", data.token);
+                    // console.log("TOKEN STOCKÉ:", data.token);
                     document.getElementById("appContent").style.display = "block";
                     document.getElementById("pinContainer").style.display = "none";
                     if (typeof initFileInput === "function") {
                         initFileInput();
                     }
 
-                    // 🔥 attendre cookie
+                    // attendre cookie
                     setTimeout(() => {
                         if (typeof checkAdmin === "function") {
                             checkAdmin();
@@ -41,7 +39,6 @@ window.addEventListener("DOMContentLoaded", () => {
                         }
                     }, 200);
                 }
-
                 else {
                     alert("Code incorrect ❌");
                     inputs.forEach(i => i.value = "");

@@ -4,26 +4,24 @@ let playerValid = false;
 let isUpdatingUI = false;
 let token = localStorage.getItem("token");
 
-const SLOTS = [
-    { label: "samedi_aprem" },
-    { label: "dimanche_matin" },
-    { label: "dimanche_aprem" }
-];
-
 async function login(code) {
+
     const res = await fetch(`/check-access?code=${code}`);
     const data = await res.json();
-
+    // console.log("LOGIN RESPONSE:", data);
     if (data.ok) {
         token = data.token;
+        //  STOCKAGE
         localStorage.setItem("token", token);
+        // console.log("TOKEN STOCKÉ:", localStorage.getItem("token"));
     } else {
         alert("Code incorrect");
     }
 }
-
 function checkAdmin() {
+
     const token = localStorage.getItem("token");
+
     if (!token) return;
 
     try {
@@ -38,70 +36,20 @@ function checkAdmin() {
             const importMessage = document.getElementById("importMessage");
             if (importMessage) importMessage.style.display = "block";
         }
+
     } catch (err) {
         console.error("Erreur token:", err);
     }
 }
 
-// ✅ NOUVEAU : génération intelligente des slots
-function getSlotsFromDate(dateStr) {
-    const date = new Date(dateStr + "T00:00:00");
-    const day = date.getDay(); // 6 = samedi, 0 = dimanche
-
-    if (day === 6) {
-        return [{ label: "samedi_aprem" }];
-    }
-
-    if (day === 0) {
-        return [
-            { label: "dimanche_matin" },
-            { label: "dimanche_aprem" }
-        ];
-    }
-
-    return [];
-}
-
-// ✅ NOUVEAU : render dynamique
-function renderSlotsForSelectedDay() {
-    const container = document.getElementById("matchDaysContainer");
-    const daySelect = document.getElementById("match_day_id");
-
-    if (!container || !daySelect) return;
-
-    const slots = SLOTS; // 🔥 ici
-
-    container.innerHTML = "";
-
-    slots.forEach(slot => {
-        const wrapper = document.createElement("div");
-        wrapper.classList.add("slot-row");
-
-        const label = document.createElement("label");
-        label.textContent = slot.label
-            .replace("_", " ")
-            .replace("aprem", "après-midi");
-
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.dataset.label = slot.label;
-
-        wrapper.appendChild(label);
-        wrapper.appendChild(checkbox);
-        container.appendChild(wrapper);
-    });
-
-    setSlotsDisabled(!playerValid);
-}
-// Utilitaires
+// Utilitaire pour Reset 
 
 function resetUI() {
+
     const nameDiv = document.getElementById("player_name");
     const infoDiv = document.getElementById("player_info");
-
     if (nameDiv) nameDiv.textContent = "";
     if (infoDiv) infoDiv.textContent = "";
-
     playerValid = false;
     window.currentAvailability = null;
     setSlotsDisabled(true);
@@ -109,23 +57,28 @@ function resetUI() {
 }
 
 function clearResult() {
+
     const result = document.getElementById("result");
     if (result) result.innerHTML = "";
 }
 
 async function safeFetch(url) {
+
     const token = localStorage.getItem("token");
-    if (!token) throw new Error("Pas de token !");
-
+    if (!token) {
+        throw new Error("Pas de token !");
+    }
     const res = await fetch(url, {
-        headers: { "Authorization": "Bearer " + token }
+        headers: {
+            "Authorization": "Bearer " + token
+        }
     });
-
     if (!res.ok) throw new Error(`Erreur API: ${url}`);
     return res.json();
 }
 
 function setSlotsDisabled(disabled) {
+
     const checkboxes = document.querySelectorAll("#matchDaysContainer input");
     checkboxes.forEach(cb => {
         cb.disabled = disabled;
@@ -134,35 +87,42 @@ function setSlotsDisabled(disabled) {
 }
 
 function resetSlots() {
+    
     document.querySelectorAll("#matchDaysContainer input")
         .forEach(cb => cb.checked = false);
 }
 
 function applySlots(slots) {
-    const checkboxes = document.querySelectorAll("#matchDaysContainer input");
+    // console.log("SLOTS BACKEND:", slots);
 
+    const checkboxes = document.querySelectorAll("#matchDaysContainer input");
+    checkboxes.forEach(cb => {
+       // console.log("CHECKBOX LABEL:", cb.dataset.label);
+    });
     slots.forEach(slot => {
+        // console.log("SLOT LABEL:", slot.label);
+        // console.log("TYPE AVAILABLE:", typeof slot.available, slot.available);
         const cb = Array.from(checkboxes)
             .find(c => c.dataset.label === slot.label);
-
-        if (cb) cb.checked = slot.available;
+        // console.log("MATCH FOUND:", cb);
+        if (cb) {
+            cb.checked = slot.available;
+        }
     });
+    // console.log("AFTER APPLY:", Array.from(checkboxes).map(cb => cb.checked));
 }
 
-// Chargement
+// Chargement data
 
 async function loadData() {
+
     try {
         matchDays = await safeFetch("/match-days");
-
         const daySelect = document.getElementById("match_day_id");
-
         if (daySelect) {
             daySelect.innerHTML = "";
-
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-
             const futureDays = matchDays.filter(day => {
                 if (!day.date) return false;
                 const d = new Date(day.date + "T00:00:00");
@@ -173,164 +133,176 @@ async function loadData() {
             const nextDays = futureDays.slice(0, 2);
 
             nextDays.forEach(day => {
-                const option = document.createElement("option");
-                option.value = day.id;
+            const option = document.createElement("option");
+            option.value = day.id;
+            const formattedDate = day.date
+                ? day.date.split("-").reverse().join("/")
+                : "";
+            option.text = `${day.code} - ${formattedDate}`;
 
-                const formattedDate = day.date
-                    ? day.date.split("-").reverse().join("/")
-                    : "";
-
-                option.text = `${day.code} - ${formattedDate}`;
-
-                // 🔒 verrou J-3
-                if (day.date) {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-
-                    const matchDate = new Date(day.date + "T00:00:00");
-                    const limitDate = new Date(matchDate);
-                    limitDate.setDate(limitDate.getDate() - 3);
-
-                    if (today >= limitDate) {
-                        option.disabled = true;
-                        option.text += " (verrouillé)";
-                    }
+            // On grise 3 jours avant
+            if (day.date) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const matchDate = new Date(day.date + "T00:00:00");
+                const limitDate = new Date(matchDate);
+                limitDate.setDate(limitDate.getDate() - 3);
+                if (today >= limitDate) {
+                    option.disabled = true;
+                    option.text += " (verrouillé)";
                 }
-
-                daySelect.appendChild(option);
-            });
-
-            // 🔥 IMPORTANT : render initial
-            renderSlotsForSelectedDay();
+            }
+            daySelect.appendChild(option);
+        });
         }
 
-    } catch (err) {}
+        const container = document.getElementById("matchDaysContainer");
+        if (container) {
+            container.innerHTML = "";
+            const slots = [
+                { id: 1, label: "samedi_aprem" },
+                { id: 2, label: "dimanche_matin" },
+                { id: 3, label: "dimanche_aprem" }
+            ];
+            slots.forEach(slot => {
+                const wrapper = document.createElement("div");
+                wrapper.classList.add("slot-row");
+                const label = document.createElement("label");
+                label.textContent = slot.label
+                    .replace("_", " ")
+                    .replace("aprem", "après-midi");
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.value = slot.id;
+                checkbox.dataset.label = slot.label;
+                wrapper.appendChild(label);
+                wrapper.appendChild(checkbox);
+                container.appendChild(wrapper);
+            });
+            setSlotsDisabled(true); 
+        }
+
+    } catch (err) {
+        // console.error("Erreur loadData:", err);
+    }
 }
 
-// Init
+// Initialisation
 
 document.addEventListener("DOMContentLoaded", () => {
+
     checkAdmin();
     loadData();
-
+   
     setTimeout(() => {
         const input = document.getElementById("license");
         if (input) input.focus();
     }, 300);
-
     const daySelect = document.getElementById("match_day_id");
-
-    if (daySelect) {
+     if (daySelect) {
         daySelect.addEventListener("change", () => {
-            renderSlotsForSelectedDay();
-
+            //  ne fait quelque chose QUE si on a des données
             if (window.currentAvailability) {
                 updateAvailabilityUI();
             }
         });
-    }
+     }
 
     const form = document.getElementById("form");
-
     if (form) {
         form.addEventListener("input", clearResult);
-
         form.addEventListener("submit", async function (e) {
             e.preventDefault();
-
             if (!playerValid) {
                 alert("Licence invalide");
                 return;
             }
-
             try {
                 const selectedDay = parseInt(
                     document.getElementById("match_day_id").value
                 );
-
                 const slots = Array.from(
                     document.querySelectorAll("#matchDaysContainer input")
-                ).map(cb => ({
+                )
+                .map(cb => ({
                     label: cb.dataset.label,
                     available: cb.checked
                 }));
-
                 const data = {
                     license: document.getElementById("license").value.trim(),
                     match_day_id: selectedDay,
                     slots: slots
                 };
-
+                // ICI (IMPORTANT)
+                // console.log("TOKEN AVANT ENVOI:", token);
                 const response = await fetch("/availability", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": `Bearer ${localStorage.getItem("token")}`
-                    },
+                        "Authorization": `Bearer ${localStorage.getItem("token")}`                    },
                     body: JSON.stringify(data)
+                    
                 });
-
                 const result = await response.json();
-
                 document.getElementById("result").innerHTML = `
-                    <div class="result-success">
-                        ✔ ${result.success || "Enregistré"}
-                    </div>
-                `;
+                    <div class="alert ${response.ok ? "alert-success" : "alert-danger"}">
+                        ${result.error || result.message || "✔ Enregistré"}
+                    </div>`;
 
-            } catch (err) {}
+            } catch (err) {
+                // console.error(err);
+            }
         });
     }
 
-    // Licence
+    // Verification licence 
 
     const licenseInput = document.getElementById("license");
 
     if (licenseInput) {
         let timeout;
-
         licenseInput.addEventListener("focus", resetField);
         licenseInput.addEventListener("click", resetField);
 
         function resetField() {
+
             licenseInput.value = "";
             resetSlots();
             setSlotsDisabled(true);
-
             document.getElementById("player_name").textContent = "";
             document.getElementById("player_info").textContent = "";
-
             window.currentAvailability = null;
             playerValid = false;
         }
 
+        // Saisie Licence
+
         licenseInput.addEventListener("input", () => {
+
             clearTimeout(timeout);
-
             timeout = setTimeout(async () => {
-                const license = licenseInput.value.trim();
-
+                const license = licenseInput.value.trim(); 
                 if (!/^[0-9]+$/.test(license)) {
                     playerValid = false;
                     return;
                 }
-
                 if (license.length < 6) return;
 
+                // Reset avant le Fetch 
                 setSlotsDisabled(true);
+                // xxx resetSlots();
                 window.currentAvailability = null;
 
                 try {
                     const token = localStorage.getItem("token");
-
                     const res = await fetch(`/player/${license}`, {
                         headers: {
                             "Authorization": "Bearer " + token
                         }
                     });
-
+                    // console.log("RESPONSE:", res);
                     const data = await res.json();
-
+                    // console.log("DATA BACKEND:", data);
                     const nameDiv = document.getElementById("player_name");
                     const infoDiv = document.getElementById("player_info");
 
@@ -338,69 +310,81 @@ document.addEventListener("DOMContentLoaded", () => {
                         nameDiv.textContent = data.name;
                         playerValid = true;
 
-                        renderSlotsForSelectedDay();
-
                         if (data.availability && data.availability.length > 0) {
-                            infoDiv.innerHTML = `
-                                <div class="player-info">
-                                    ✔ Déjà enregistré
-                                </div>
-                            `;
+                            infoDiv.textContent = "✔ Déjà enregistré (modifiable)";
                             window.currentAvailability = data.availability;
-                            setSlotsDisabled(false);
-                            updateAvailabilityUI();
-                        } else {
-                            infoDiv.innerHTML = `
-                                <div class="player-info">
-                                    ✔ Aucune saisie effectuée
-                                </div> 
-                            `;                        
-                            window.currentAvailability = null;
+                            // xxx
+                            setTimeout(() => {
+                                updateAvailabilityUI();
+                            }, 0);
+                            setSlotsDisabled(false); //  ACTIVE
+                            updateAvailabilityUI(); //  CLEAN
+                            const selectedDay = parseInt(
+                                document.getElementById("match_day_id").value
+                            );
+                            const dayData = data.availability.find(d =>
+                                parseInt(d.match_day_id) === selectedDay
+                            );
 
-                            setSlotsDisabled(false);
-                            updateAvailabilityUI();
+                        } else {
+                            infoDiv.textContent = "🕒 Aucune saisie effectuée";
+                            window.currentAvailability = null;
+                            setSlotsDisabled(false); //  IMPORTANT → ACTIVER
+                            // console.log("ACTIVATION FORCÉE");
+                            updateAvailabilityUI(); //  CLEAN
                         }
                     } else {
                         nameDiv.textContent = "";
-                        infoDiv.innerHTML = `
-                                <div class="player-info">
-                                    ✔ Licence inconnue
-                                </div> 
-                            `;
+                        infoDiv.textContent = "Licence inconnue";
                         playerValid = false;
                         setSlotsDisabled(true);
                     }
-
-                } catch (err) {}
+                } catch (err) {
+                    // console.error(err);
+                }
             }, 300);
-        });
+        });       
     }
 });
 
-function updateAvailabilityUI() {
-    if (isUpdatingUI) return;
+function displayAvailability(slots) {
+    const infoDiv = document.getElementById("player_info");
 
+    if (!slots || slots.length === 0) {
+        infoDiv.textContent = "🕒 Aucune saisie effectuée";
+        return;
+    }
+
+    const text = slots.map(slot => {
+        const label = slot.label
+            .replace("_", " ")
+            .replace("aprem", "après-midi");
+
+        return `${label} : ${slot.available ? "✅ disponible" : "❌ indisponible"}`;
+    });
+
+    infoDiv.innerHTML = text.join("<br>");
+}
+
+function updateAvailabilityUI() {
+    if (isUpdatingUI) return; // 🔥 bloque double appel
     isUpdatingUI = true;
 
+    // console.log("CURRENT AVAILABILITY:", window.currentAvailability);
     const checkboxes = document.querySelectorAll("#matchDaysContainer input");
     checkboxes.forEach(cb => cb.checked = false);
-
     if (!window.currentAvailability) {
         isUpdatingUI = false;
         return;
     }
-
     const selectedDay = parseInt(
         document.getElementById("match_day_id").value
     );
-
     const dayData = window.currentAvailability.find(d =>
         parseInt(d.match_day_id) === selectedDay
     );
-
     if (dayData && dayData.slots) {
         applySlots(dayData.slots);
     }
-
     isUpdatingUI = false;
 }
