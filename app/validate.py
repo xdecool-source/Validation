@@ -22,7 +22,7 @@ if not SECRET_KEY:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("🔄 Vérification / création des tables...")
+    print(" Vérification / création des tables...")
     Base.metadata.create_all(bind=engine)
     init_match_days()
     yield

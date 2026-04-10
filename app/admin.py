@@ -233,7 +233,7 @@ def get_dispos(match_day_id: int):
             return [dict(row._mapping) for row in result]
 
     except Exception as e:
-        print("🔥 ERREUR BACKEND:", e)
+        print(" ERREUR BACKEND:", e)
         return {"error": str(e)}
     
     

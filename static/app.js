@@ -43,7 +43,8 @@ function checkAdmin() {
     }
 }
 
-// ✅ NOUVEAU : génération intelligente des slots
+//  génération des slots
+
 function getSlotsFromDate(dateStr) {
     const date = new Date(dateStr + "T00:00:00");
     const day = date.getDay(); // 6 = samedi, 0 = dimanche
@@ -62,7 +63,8 @@ function getSlotsFromDate(dateStr) {
     return [];
 }
 
-// ✅ NOUVEAU : render dynamique
+//  render dynamique
+
 function renderSlotsForSelectedDay() {
     const container = document.getElementById("matchDaysContainer");
     const daySelect = document.getElementById("match_day_id");
@@ -182,7 +184,7 @@ async function loadData() {
 
                 option.text = `${day.code} - ${formattedDate}`;
 
-                // 🔒 verrou J-3
+                //  verrou J-3
                 if (day.date) {
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
@@ -200,7 +202,7 @@ async function loadData() {
                 daySelect.appendChild(option);
             });
 
-            // 🔥 IMPORTANT : render initial
+            // IMPORTANT : render initial
             renderSlotsForSelectedDay();
         }
 
