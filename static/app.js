@@ -7,7 +7,8 @@ let token = localStorage.getItem("token");
 const SLOTS = [
     { label: "samedi_aprem" },
     { label: "dimanche_matin" },
-    { label: "dimanche_aprem" }
+    { label: "dimanche_aprem" },
+    { label: "Absent" }
 ];
 
 async function login(code) {
@@ -71,7 +72,7 @@ function renderSlotsForSelectedDay() {
 
     if (!container || !daySelect) return;
 
-    const slots = SLOTS; // 🔥 ici
+    const slots = SLOTS; 
 
     container.innerHTML = "";
 
@@ -93,8 +94,25 @@ function renderSlotsForSelectedDay() {
         container.appendChild(wrapper);
     });
 
+    document.querySelectorAll("#matchDaysContainer input[type=checkbox]").forEach(cb => {
+        cb.addEventListener("change", () => {
+            if (cb.dataset.label === "Absent" && cb.checked) {
+                document.querySelectorAll("#matchDaysContainer input[type=checkbox]")
+                    .forEach(other => {
+                        if (other !== cb) other.checked = false;
+                    });
+            } else {
+                const absent = document.querySelector(
+                    '#matchDaysContainer input[data-label="Absent"]'
+                );
+                if (absent) absent.checked = false;
+            }
+        });
+    });
+
     setSlotsDisabled(!playerValid);
 }
+
 // Utilitaires
 
 function resetUI() {
@@ -128,21 +146,39 @@ async function safeFetch(url) {
 }
 
 function setSlotsDisabled(disabled) {
-    const checkboxes = document.querySelectorAll("#matchDaysContainer input");
+    const checkboxes = document.querySelectorAll("#matchDaysContainer input[type=checkbox]");
+    const absent = document.querySelector('#matchDaysContainer input[data-label="Absent"]');
     checkboxes.forEach(cb => {
         cb.disabled = disabled;
         cb.parentElement.style.opacity = disabled ? "0.4" : "1";
     });
-}
+   
+ }
 
 function resetSlots() {
-    document.querySelectorAll("#matchDaysContainer input")
-        .forEach(cb => cb.checked = false);
+    document.querySelectorAll("#matchDaysContainer input[type=checkbox]")
+    .forEach(cb => cb.checked = false);
+
+    const absent = document.querySelector('#matchDaysContainer input[data-label="Absent"]');
+    if (absent) absent.checked = false;
 }
 
 function applySlots(slots) {
-    const checkboxes = document.querySelectorAll("#matchDaysContainer input");
+    const checkboxes = document.querySelectorAll("#matchDaysContainer input[type=checkbox]");
+    const absent = document.querySelector('#matchDaysContainer input[data-label="Absent"]');
 
+    // reset
+    checkboxes.forEach(cb => cb.checked = false);
+    if (absent) absent.checked = false;
+
+    const isAbsent = slots.find(s => s.label === "Absent" && s.available);
+
+    if (isAbsent) {
+        if (absent) absent.checked = true;
+        return;
+    }
+
+    // sinon comportement normal
     slots.forEach(slot => {
         const cb = Array.from(checkboxes)
             .find(c => c.dataset.label === slot.label);
@@ -151,20 +187,77 @@ function applySlots(slots) {
     });
 }
 
+// fonction pour verrouillage
+
+function isLocked(day) {
+
+    if (!day.date) return false;
+    const now = new Date();
+    const matchDate = new Date(day.date + "T00:00:00");
+    const limitDate = new Date(matchDate);
+
+    //  J-4
+    limitDate.setDate(limitDate.getDate() - 4);
+    //  heure fixe 14h
+    limitDate.setHours(14, 0, 0, 0);
+    return now >= limitDate;
+}
+
+
+// Affichage du jour de cloture 
+
+function getClosureDate(day) {
+
+    if (!day.date) return "";
+    const matchDate = new Date(day.date + "T00:00:00");
+    const limitDate = new Date(matchDate);
+
+    //  J-4
+    limitDate.setDate(limitDate.getDate() - 4);
+
+    //  14h
+    limitDate.setHours(14, 0, 0, 0);
+    const d = String(limitDate.getDate()).padStart(2, "0");
+    const m = String(limitDate.getMonth() + 1).padStart(2, "0");
+    return ` ⏱${d}/${m} 
+    `;
+}
+
+
+function updateClosureInfo() {
+    const dayId = document.getElementById("match_day_id").value;
+    const day = matchDays.find(d => d.id == dayId);
+
+    if (!day) return;
+
+    const closureDiv = document.getElementById("closureInfo");
+    if (!closureDiv) return;
+
+    const text = getClosureDate(day);
+    const parts = text.split("⏱");
+
+    const locked = isLocked(day);
+
+    closureDiv.innerHTML = `
+        On clôture : ${parts[0]}
+        <span class="${locked ? "closure-locked" : "closure-open"}">
+            le ${parts[1]} à 14H00
+        </span>
+    `;
+}
+
+
 // Chargement
 
 async function loadData() {
     try {
         matchDays = await safeFetch("/match-days");
-
         const daySelect = document.getElementById("match_day_id");
 
         if (daySelect) {
             daySelect.innerHTML = "";
-
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-
             const futureDays = matchDays.filter(day => {
                 if (!day.date) return false;
                 const d = new Date(day.date + "T00:00:00");
@@ -172,41 +265,48 @@ async function loadData() {
             });
 
             futureDays.sort((a, b) => new Date(a.date) - new Date(b.date));
-            const nextDays = futureDays.slice(0, 2);
+            let nextDays = [];
+
+            //  1. ajouter toutes les journées verrouillées
+            matchDays.forEach(day => {
+                if (isLocked(day)) {
+                    nextDays.push(day);
+                }
+            });
+
+            //  2. ajouter la première journée NON verrouillée
+            for (let i = 0; i < futureDays.length; i++) {
+                const day = futureDays[i];
+                if (!isLocked(day)) {
+                    nextDays.push(day);
+                    break;
+                }
+            }
 
             nextDays.forEach(day => {
                 const option = document.createElement("option");
                 option.value = day.id;
-
                 const formattedDate = day.date
                     ? day.date.split("-").reverse().join("/")
                     : "";
 
+                // option.text = `${day.code} - ${formattedDate}`;
+                
                 option.text = `${day.code} - ${formattedDate}`;
 
-                //  verrou J-3
-                if (day.date) {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-
-                    const matchDate = new Date(day.date + "T00:00:00");
-                    const limitDate = new Date(matchDate);
-                    limitDate.setDate(limitDate.getDate() - 3);
-
-                    if (today >= limitDate) {
-                        option.disabled = true;
-                        option.text += " (verrouillé)";
-                    }
+                //  verrou mercredi 14h
+                if (isLocked(day)) {
+                    option.disabled = true;
+                    option.text += " (verrouillé)";
                 }
-
                 daySelect.appendChild(option);
             });
-
-            // IMPORTANT : render initial
             renderSlotsForSelectedDay();
         }
 
-    } catch (err) {}
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 // Init
@@ -216,6 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loadData();
 
     setTimeout(() => {
+        updateClosureInfo(); // 
         const input = document.getElementById("license");
         if (input) input.focus();
     }, 300);
@@ -229,6 +330,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (window.currentAvailability) {
                 updateAvailabilityUI();
             }
+            updateClosureInfo(); // 👈 ICI
         });
     }
 
@@ -250,12 +352,36 @@ document.addEventListener("DOMContentLoaded", () => {
                     document.getElementById("match_day_id").value
                 );
 
-                const slots = Array.from(
-                    document.querySelectorAll("#matchDaysContainer input")
-                ).map(cb => ({
+
+            // xx
+
+            const checkboxes = Array.from(
+                document.querySelectorAll("#matchDaysContainer input[type=checkbox]")
+            );
+
+            const absentChecked = checkboxes.find(
+                cb => cb.dataset.label === "Absent" && cb.checked
+            );
+
+            const slots = checkboxes.map(cb => {
+                if (absentChecked && cb.dataset.label !== "Absent") {
+                    return {
+                        label: cb.dataset.label,
+                        available: false
+                    };
+                }
+
+                return {
                     label: cb.dataset.label,
                     available: cb.checked
-                }));
+                };
+            });
+
+
+
+
+            //xx
+
 
                 const data = {
                     license: document.getElementById("license").value.trim(),
@@ -284,13 +410,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Licence
+    // Licence 
 
     const licenseInput = document.getElementById("license");
 
     if (licenseInput) {
         let timeout;
-
         licenseInput.addEventListener("focus", resetField);
         licenseInput.addEventListener("click", resetField);
 
@@ -384,7 +509,7 @@ function updateAvailabilityUI() {
 
     isUpdatingUI = true;
 
-    const checkboxes = document.querySelectorAll("#matchDaysContainer input");
+    const checkboxes = document.querySelectorAll("#matchDaysContainer input[type=checkbox]");
     checkboxes.forEach(cb => cb.checked = false);
 
     if (!window.currentAvailability) {

@@ -9,7 +9,7 @@
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
-    background: linear-gradient(180deg, #4e5964, #3e4750);
+    background: linear-gradient(180deg, #f2f2f7, #e5e5ea);
 }
 
 /* =========================
@@ -26,7 +26,7 @@ body {
 ========================= */
 .card {
     width: 100%;
-    max-width: 320px;
+    max-width: 420px;
     background: rgba(255, 255, 255, 0.95);
     border-radius: 22px;
     padding: 20px;
@@ -223,47 +223,83 @@ button:hover {
     border-radius: 6px;
 }
 
+.closure-open {
+    color: #2ecc71; /* vert */
+    font-weight: bold;
+}
+
+.closure-locked {
+    color: #e74c3c; /* rouge */
+    font-weight: bold;
+}
+
+#closureInfo {
+    text-align: center;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
 
 
 /* =========================
    DARK MODE AUTO
 ========================= */
-@media (prefers-color-scheme: dark) {
+
+ @media (prefers-color-scheme: dark) {
 
     body {
-        background: linear-gradient(180deg, #1c1c1e, #2c2c2e);
+        background: linear-gradient(180deg, #e1e1eb, #8e8ea0);
     }
 
+   /* Couleur de la carte */
     .card {
-        background: rgba(28, 28, 30, 0.95);
-        color: #f2f2f7;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        background: rgba(121, 100, 100, 0.85);
+        color: #1c1c1e;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
     }
 
     h2 {
-        color: #f2f2f7;
+        color: #1c1c1e;
     }
 
     .form-control,
     select {
-        background: #2c2c2e;
-        color: white;
-        border: 1px solid #444;
+        background: #f2f2f7;
+        color: #1c1c1e;
+        border: 1px solid #ccc;
     }
 
+    .slot-row {
+    padding: 8px 6px;
+    border-radius: 10px;
+    transition: background 0.2s;
+}
+
+    /* effet visuel ligne */
+    .slot-row:hover {
+        background: rgba(255,255,255,0.08);
+    }
+
+    /* texte plus visible */
     .slot-row label {
-        color: #ddd;
+        color: #ffffff;
+        font-weight: 600;
+    }
+
+    /* quand désactivé */
+    .slot-row input:disabled + label,
+    .slot-row input:disabled ~ label {
+        color: #888;
     }
 
     #license {
-        background: #2c2c2e;
-        color: white;
-        border: 1px solid #444;
+        background: #f2f2f7;
+        color: #1c1c1e;
+        border: 1px solid #ccc;
     }
 
     .player-info {
-        background: rgba(52, 199, 89, 0.2);
-        color: #30d158;
+        background: rgba(52, 199, 89, 0.15);
+        color: #248a3d;
     }
 }
 

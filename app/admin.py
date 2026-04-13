@@ -9,9 +9,11 @@ from sqlalchemy import text
 from dotenv import load_dotenv
 from time import time
 from datetime import datetime, timedelta
+
 import io
 import os
 import jwt
+import pytz
 
 router = APIRouter()
 attempts = {}
@@ -77,7 +79,8 @@ def get_slots_from_date(date_str: str):
     return [
         "samedi_aprem",
         "dimanche_matin",
-        "dimanche_aprem"
+        "dimanche_aprem",
+        "Absent"
     ]
 
 
@@ -236,7 +239,41 @@ def get_dispos(match_day_id: int):
         print(" ERREUR BACKEND:", e)
         return {"error": str(e)}
     
-    
+
+
+# =========================
+# Init match-slot
+# =========================
+
+
+
+@router.get("/init-match-slots")
+def init_match_slots(role: str = Depends(require_admin)):
+    with engine.begin() as conn:
+
+        slots = [
+            "samedi_aprem",
+            "dimanche_matin",
+            "dimanche_aprem",
+            "Absent"
+        ]
+
+        match_days = conn.execute(text("""
+            SELECT id FROM match_days
+        """)).fetchall()
+
+        for day in match_days:
+            for label in slots:
+                conn.execute(text("""
+                    INSERT INTO match_slots (match_day_id, label)
+                    VALUES (:day_id, :label)
+                    ON CONFLICT DO NOTHING
+                """), {
+                    "day_id": day.id,
+                    "label": label
+                })
+
+    return {"message": "match_slots remplie"}   
 
 
 # =========================
@@ -264,18 +301,40 @@ def add_availability(
 
         if not match_day:
             raise HTTPException(status_code=400, detail="Match day invalide")
-
+        
+        
+        paris = pytz.timezone("Europe/Paris")        
+        
         match_date = datetime.strptime(match_day.date, "%Y-%m-%d")
-        limit_date = match_date - timedelta(days=3)
+        match_date = paris.localize(match_date)
 
-        if datetime.utcnow() >= limit_date:
+        # 🔥 J-4 à 14h
+        limit_date = match_date - timedelta(days=4)
+        limit_date = limit_date.replace(hour=14, minute=0, second=0)
+
+        now = datetime.now(paris)
+        
+        if now >= limit_date:
             raise HTTPException(status_code=403, detail="Saisie verrouillée")
+        
+        
+    
 
         valid_slots = get_slots_from_date(match_day.date)
+
+        absent_selected = any(
+            s["label"] == "Absent" and s["available"]
+            for s in data["slots"]
+        )
 
         for slot in data["slots"]:
             label = slot["label"]
             available = slot["available"]
+            
+            # 🔥 correction logique
+            if absent_selected and label != "Absent":
+                available = False
+            
 
             if label not in valid_slots:
                 continue

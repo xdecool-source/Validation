@@ -15,27 +15,32 @@ CREATE TABLE match_days (
     day_type TEXT CHECK (day_type IN ('dimanche', 'samedi'))
 );
 
+CREATE TABLE match_slots (
+    id SERIAL PRIMARY KEY,
+    match_day_id INTEGER REFERENCES match_days(id),
+    label TEXT CHECK (
+        label IN (
+            'samedi_aprem',
+            'dimanche_matin',
+            'dimanche_aprem'
+        )
+    )
+);
+
+
 CREATE TABLE availabilities (
     id SERIAL PRIMARY KEY,
+
     player_id INTEGER REFERENCES players(id),
     match_day_id INTEGER REFERENCES match_days(id),
-    slot_id TEXT,
-    availability BOOLEAN,
-    );
-    
-    availability TEXT CHECK (availability IN ('dimanche', 'samedi', 'indisponible')),
+    slot_id INTEGER REFERENCES match_slots(id),
 
-    CONSTRAINT fk_player
-        FOREIGN KEY (player_id)
-        REFERENCES players(id),
-
-    CONSTRAINT fk_match_day
-        FOREIGN KEY (match_day_id)
-        REFERENCES match_days(id),
+    availability TEXT CHECK (
+        availability IN ('disponible', 'indisponible')
+    ),
 
     CONSTRAINT unique_player_slot_day
     UNIQUE (player_id, slot_id, match_day_id)
-    
 );
 
 

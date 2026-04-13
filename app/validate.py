@@ -9,6 +9,7 @@ from app.models import Base
 from app.import_joueur import router as import_router
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
+from app.admin import init_match_slots
 
 import os
 
@@ -25,6 +26,7 @@ async def lifespan(app: FastAPI):
     print(" Vérification / création des tables...")
     Base.metadata.create_all(bind=engine)
     init_match_days()
+    init_match_slots() 
     yield
 
 app = FastAPI(lifespan=lifespan)

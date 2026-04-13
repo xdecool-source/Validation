@@ -22,7 +22,9 @@ async function loadDays() {
         } else {
             opt.text = "✅ " + day.code;
         }
+
         // sélection automatique
+
         const matchDate = new Date(day.date);
         const diff = Math.abs(matchDate - new Date());
         if (diff < smallestDiff) {
@@ -45,12 +47,14 @@ function formatLabel(label) {
 }
 
 async function loadDispos() {
-    // console.log("SORT:", currentSort);
+    
+    console.log("SORT:", currentSort);
     const dayId = document.getElementById("match_day_id").value;
     const res = await fetch("/dispos/" + dayId);
     const data = await res.json();
     window.currentData = data;
-    // console.log("STOCK DATA:", window.currentData);
+
+    console.log("STOCK DATA:", window.currentData);
     const tbody = document.getElementById("table-body");
     tbody.innerHTML = "";
 
@@ -73,7 +77,7 @@ async function loadDispos() {
             }).length;
         };
 
-        // console.log("SORT ACTUEL:", currentSort);
+        console.log("SORT ACTUEL:", currentSort);
         if (currentSort === "dispo") {
             data.sort((a, b) => {
                 const dispoA = count(a, "disponible");
@@ -107,7 +111,7 @@ async function loadDispos() {
 
         } else {
             // Tri par classement
-            // console.log("RANKINGS:", data.map(d => d.ranking));
+            console.log("RANKINGS:", data.map(d => d.ranking));
             data.sort((a, b) => b.ranking - a.ranking);
         }
         //
@@ -120,6 +124,19 @@ async function loadDispos() {
                 return;
             }
             const slots = row.slots.split(",");
+            // 🔥 détecter si au moins une dispo existe
+            const hasDispo = slots.some(s => {
+                const parts = s.split(":");
+                const label = parts[0];
+                const val = parts[parts.length - 1]?.trim().toLowerCase();
+
+                const isDispo =
+                    val === "true" ||
+                    val === "1" ||
+                    val === "disponible";
+
+                return label !== "Absent" && isDispo;
+            });
             const order = ["dimanche_matin", "dimanche_aprem", "samedi_aprem"];
             // tri des slots
             slots.sort((a, b) => {
@@ -131,20 +148,51 @@ async function loadDispos() {
                 const parts = s.split(":");
                 const label = parts[0];
                 const val = parts[parts.length - 1]?.trim().toLowerCase();
-                let color = "bg-secondary";
+
+
+                // 🔥 OBLIGATOIRE
                 const isDispo =
                     val === "true" ||
                     val === "1" ||
                     val === "disponible";
-                if (isDispo) {
-                    color = "bg-success";
+
+                let color = "bg-secondary";
+
+                if (hasDispo) {
+
+                    if (label === "Absent") {
+                        color = "bg-secondary";
+                    } else if (isDispo) {
+                        color = "bg-success";
+                    } else {
+                        color = "bg-secondary";
+                    }
+
                 } else {
-                    color = "bg-danger";
-}
+
+                    if (label === "Absent") {
+                        color = "bg-danger";
+                    } else if (isDispo) {
+                        color = "bg-success";
+                    } else {
+                        color = "bg-danger";
+                    }
+
+                }
+
                 return `<span class="badge ${color} me-1">
                     ${formatLabel(label)}
                 </span>`;
             }).join(" ");
+
+
+    
+
+
+
+
+
+
 
             tr.innerHTML = `
                 <td>${row.name || "-"}</td>
@@ -167,7 +215,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function setSort(type) {
-    // console.log("CLICK SORT:", type); 
+    console.log("CLICK SORT:", type); 
     currentSort = type;
     loadDispos(); // recharge avec nouveau tri
 }
