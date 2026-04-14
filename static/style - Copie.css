@@ -1,0 +1,336 @@
+/* =========================
+   Global
+========================= */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+    background: linear-gradient(180deg, #f2f2f7, #e5e5ea);
+}
+
+/* =========================
+   Container
+========================= */
+#appContent {
+    display: flex;
+    justify-content: center;
+    padding: 20px 12px;
+}
+
+/* =========================
+   Cart  (Style Ios )
+========================= */
+.card {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 22px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+
+    animation: fadeInUp 0.5s ease;
+}
+
+
+body {
+    overflow: hidden;
+}
+
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================
+   Titre
+========================= */
+h2 {
+    font-size: 20px;
+    font-weight: 00;
+    margin-bottom: 20px;
+}
+
+/* =========================
+   Entrée
+========================= */
+
+#license {
+    width: 160px;        /* largeur contrôlée */
+    margin: 6px auto;
+
+    text-align: center;
+    font-size: 14px;     /* plus compact */
+    letter-spacing: 1px;
+    font-weight: bold; 
+
+    padding: 4px 8px;    /* réduit la hauteur */
+    
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+.form-control {
+    border-radius: 12px;
+    padding: 10px;
+    font-size: 15px;
+}
+
+/* =========================
+   Select
+========================= */
+select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    margin-bottom: 15px;
+}
+
+
+/* =========================
+   Switch (remplace checkbox)
+========================= */
+.slot-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.slot-row input {
+    appearance: none;
+    width: 42px;
+    height: 24px;
+    background: #ccc;
+    border-radius: 50px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.slot-row input:checked {
+    background: #34c759;
+}
+
+.slot-row input::before {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s ease;
+}
+
+.slot-row input:checked::before {
+    transform: translateX(18px);
+}
+
+/* =========================
+   Bouton
+========================= */
+button {
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+button:active {
+    transform: scale(0.9);
+}
+
+button:hover {
+    transform: translateY(-2px);
+}
+
+.btn-primary {
+    background: #007aff;
+    border: none;
+}
+
+.btn-primary:active {
+    transform: scale(0.97);
+}
+
+/* =========================
+   Resultat
+========================= */
+.alert {
+    animation: pop 0.6s ease;
+}
+
+@keyframes pop {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.player-info {
+    font-size: 12px;
+    font-weight: 500;
+    color: #34c759;
+    text-align: center;
+    margin-top: 6px;
+    background: rgba(52, 199, 89, 0.1);
+    padding: 4px 8px;
+    border-radius: 10px;
+    display: inline-block;
+}
+
+#match_day_id {
+    text-align: center;
+    text-align-last: center;
+}
+
+.btn-modern {
+  width: auto;
+  border-radius: 30px;
+  padding: 12px 25px; /* espace horizontal */
+  font-weight: 600;
+  color: white;
+  border: none;
+  display: inline-block;
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  transition: 0.3s;
+}
+
+.btn-modern:hover {
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  transform: translateY(-2px);
+}
+
+
+
+/* =========================
+   Pin
+========================= */
+#pinContainer {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+
+.pin {
+    width: 28px;
+    height: 32px;
+    text-align: center;
+    border-radius: 6px;
+}
+
+.closure-open {
+    color: #2ecc71; /* vert */
+    font-weight: bold;
+}
+
+.closure-locked {
+    color: #e74c3c; /* rouge */
+    font-weight: bold;
+}
+
+#closureInfo {
+    text-align: center;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+
+/* =========================
+   DARK MODE AUTO
+========================= */
+
+ @media (prefers-color-scheme: dark) {
+
+    body {
+        background: linear-gradient(180deg, #e1e1eb, #8e8ea0);
+    }
+
+
+   /* Couleur de la carte */
+    .card {
+        background: rgba(121, 100, 100, 0.85);
+        color: #1c1c1e;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        
+    }
+
+    h2 {
+        color: #1c1c1e;
+    }
+
+    .form-control,
+    select {
+        background: #f2f2f7;
+        color: #1c1c1e;
+        border: 1px solid #ccc;
+    }
+
+    .slot-row {
+    padding: 8px 6px;
+    border-radius: 10px;
+    transition: background 0.2s;
+}
+
+    /* effet visuel ligne */
+    .slot-row:hover {
+        background: rgba(255,255,255,0.08);
+    }
+
+    /* texte plus visible */
+    .slot-row label {
+        color: #ffffff;
+        font-weight: 600;
+    }
+
+    /* quand désactivé */
+    .slot-row input:disabled + label,
+    .slot-row input:disabled ~ label {
+        color: #888;
+    }
+
+    #license {
+        background: #f2f2f7;
+        color: #1c1c1e;
+        border: 1px solid #ccc;
+    }
+
+    .player-info {
+        background: rgba(234, 237, 238, 0.963);
+        font-weight: bold;
+        color: #22c55e;
+    }
+}
+
+
+/* =========================
+   Message succès moderne
+========================= */
+.result-success {
+    margin-top: 12px;
+    padding: 8px 12px;
+
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+
+    color: #30d158;
+    background: rgba(48, 209, 88, 0.15);
+
+    border-radius: 12px;
+    display: inline-block;
+}

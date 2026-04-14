@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from app.database import SessionLocal, engine
@@ -32,7 +32,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.include_router(admin_router)
 app.include_router(import_router)
+
+app.mount("/static-admin", StaticFiles(directory="admin"), name="admin")
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
 templates = Jinja2Templates(directory="templates")
 
 
@@ -55,4 +58,7 @@ def admin_dispos(request: Request):
 def home(request: Request):
     return templates.TemplateResponse("user.html", {"request": request})
 
+@app.get("/admin/import-joueur")
+def admin_page():
+    return FileResponse("admin/import-joueur.html")
 

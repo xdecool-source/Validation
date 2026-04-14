@@ -239,10 +239,9 @@ function updateClosureInfo() {
     const locked = isLocked(day);
 
     closureDiv.innerHTML = `
-        On clôture : ${parts[0]}
-        <span class="${locked ? "closure-locked" : "closure-open"}">
-            le ${parts[1]} à 14H00
-        </span>
+    <div class="${locked ? "closure-locked" : "closure-open"}">
+        ⏱ On clôture le ${parts[1]} à 14H00
+    </div>
     `;
 }
 
@@ -377,12 +376,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
             });
 
-
-
-
             //xx
-
-
                 const data = {
                     license: document.getElementById("license").value.trim(),
                     match_day_id: selectedDay,
@@ -427,6 +421,9 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("player_name").textContent = "";
             document.getElementById("player_info").textContent = "";
 
+            document.getElementById("player_name").classList.remove("show");
+            document.getElementById("player_info").classList.remove("show");
+
             window.currentAvailability = null;
             playerValid = false;
         }
@@ -464,24 +461,20 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (data.name) {
                         nameDiv.textContent = data.name;
                         playerValid = true;
+                        nameDiv.textContent = data.name;
+                        nameDiv.classList.add("show");
 
                         renderSlotsForSelectedDay();
 
                         if (data.availability && data.availability.length > 0) {
-                            infoDiv.innerHTML = `
-                                <div class="player-info">
-                                    ✔ Déjà enregistré
-                                </div>
-                            `;
+                            infoDiv.textContent = "✔ Aucune saisie effectuée";
+                            infoDiv.classList.add("show");
                             window.currentAvailability = data.availability;
                             setSlotsDisabled(false);
                             updateAvailabilityUI();
                         } else {
-                            infoDiv.innerHTML = `
-                                <div class="player-info">
-                                    ✔ Aucune saisie effectuée
-                                </div> 
-                            `;                        
+                            infoDiv.textContent = "✔ Aucune saisie effectuée";
+                            infoDiv.classList.add("show");
                             window.currentAvailability = null;
 
                             setSlotsDisabled(false);
@@ -489,11 +482,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                     } else {
                         nameDiv.textContent = "";
-                        infoDiv.innerHTML = `
-                                <div class="player-info">
-                                    ✔ Licence inconnue
-                                </div> 
-                            `;
+                        infoDiv.textContent = "✔ Licence inconnue";
+                        infoDiv.classList.add("show");
                         playerValid = false;
                         setSlotsDisabled(true);
                     }

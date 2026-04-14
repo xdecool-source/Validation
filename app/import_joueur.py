@@ -1,3 +1,5 @@
+# Import des joueurs a partir fichier export de SPID
+
 from fastapi import UploadFile, File, APIRouter, HTTPException
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
@@ -18,11 +20,16 @@ ADMIN_PIN = os.getenv("ADMIN_PIN")
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
 
-@router.post("/import-joueur")
+
+@router.post("/admin/import-joueur")
 async def import_joueur(
+    
     file: UploadFile = File(...),
     role: str = Depends(verify_token)
 ):
+    
+    print("🚨 ROUTE IMPORT EXECUTÉE")
+    
     if role != "admin":
         raise HTTPException(status_code=403)
 
@@ -39,6 +46,7 @@ async def import_joueur(
             email = str(row.iloc[23]).strip() if row.iloc[23] else ""
 
             if pd.isna(license_number) or pd.isna(last_name):
+                print("SKIPPED")
                 continue
 
             players.append({
@@ -47,25 +55,40 @@ async def import_joueur(
                 "ranking": int(points) if points and str(points).isdigit() else 0,
                 "email": email
             })
-
         players.sort(key=lambda x: x["ranking"], reverse=True)
+        
+        # print("AVANT INSERT:", len(players))
+
+        inserted = 0
+        updated = 0
 
         with engine.begin() as conn:
             for p in players:
-                conn.execute(text("""
+                result = conn.execute(text("""
                     INSERT INTO players (license, name, ranking, email)
                     VALUES (:license, :name, :ranking, :email)
                     ON CONFLICT (license)
                     DO UPDATE SET
                         name = EXCLUDED.name,
                         ranking = EXCLUDED.ranking
+                    RETURNING (xmax = 0) AS inserted
                 """), p)
 
-        return {
-            "message": "Import réussi ✅",
-            "nb_joueurs": len(players)
-        }
+                row = result.fetchone()
 
+                if row[0]:
+                    inserted += 1
+                else:
+                    updated += 1
+                    
+       
+        return {
+            "message": "Import réussi",
+            "nb_total": len(players),
+            "inserted": inserted,
+            "updated": updated
+        }
+        
     except Exception as e:
         return {"error": str(e)}
     
