@@ -418,6 +418,9 @@ document.addEventListener("DOMContentLoaded", () => {
             resetSlots();
             setSlotsDisabled(true);
 
+            // reset du libelle enregistré ou etc...
+            clearResult(); 
+
             document.getElementById("player_name").textContent = "";
             document.getElementById("player_info").textContent = "";
 
@@ -439,7 +442,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                if (license.length < 6) return;
+                if (!/^[0-9]{5,}$/.test(license)) return;
 
                 setSlotsDisabled(true);
                 window.currentAvailability = null;

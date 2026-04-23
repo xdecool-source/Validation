@@ -37,7 +37,7 @@ if not SECRET_KEY:
 def create_token(role):
     payload = {
         "role": role,
-        "exp": datetime.utcnow() + timedelta(hours=4)
+        "exp": datetime.utcnow() + timedelta(minutes=2)
     }
     return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 
