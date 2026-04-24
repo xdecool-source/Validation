@@ -56,7 +56,7 @@ async function upload() {
     }
 
     const data = await res.json();
-    console.log(data);
+    // console.log(data);
 
     if (data.message) {
         if (data.inserted === 0) {

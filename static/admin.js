@@ -48,19 +48,19 @@ function formatLabel(label) {
 
 async function loadDispos() {
     
-    console.log("SORT:", currentSort);
+    //  console.log("SORT:", currentSort);
     const dayId = document.getElementById("match_day_id").value;
     const res = await fetch("/dispos/" + dayId);
     const data = await res.json();
     window.currentData = data;
 
-    console.log("STOCK DATA:", window.currentData);
+    // console.log("STOCK DATA:", window.currentData);
     const tbody = document.getElementById("table-body");
     tbody.innerHTML = "";
 
         //
         if (!Array.isArray(data)) {
-            console.error("Erreur API:", data);
+            // console.error("Erreur API:", data);
             return;
         }
         const count = (row, type) => {
@@ -77,7 +77,7 @@ async function loadDispos() {
             }).length;
         };
 
-        console.log("SORT ACTUEL:", currentSort);
+        // console.log("SORT ACTUEL:", currentSort);
         if (currentSort === "dispo") {
             data.sort((a, b) => {
                 const dispoA = count(a, "disponible");
@@ -111,7 +111,7 @@ async function loadDispos() {
 
         } else {
             // Tri par classement
-            console.log("RANKINGS:", data.map(d => d.ranking));
+            // console.log("RANKINGS:", data.map(d => d.ranking));
             data.sort((a, b) => b.ranking - a.ranking);
         }
         //
@@ -215,7 +215,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function setSort(type) {
-    console.log("CLICK SORT:", type); 
+    // .log("CLICK SORT:", type); 
     currentSort = type;
     loadDispos(); // recharge avec nouveau tri
 }
