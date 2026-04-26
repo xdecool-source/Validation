@@ -62,3 +62,6 @@ def home(request: Request):
 def admin_page():
     return FileResponse("admin/import-joueur.html")
 
+@app.get("/service-worker.js")
+def service_worker():
+    return FileResponse("static/service-worker.js", media_type="application/javascript")

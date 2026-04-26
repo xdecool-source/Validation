@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#000000">
     <title>Disponibilité Ping</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Bootstrap -->
@@ -14,6 +16,7 @@
 <!-- Code Pin -->
 <div style="position:absolute; top:10px; right:10px;">
     <div id="pinContainer">
+        <b>Tennis de Table Thuirinois ... Le Code :</b>
         <input type="text" maxlength="1" class="pin" inputmode="numeric">
         <input type="text" maxlength="1" class="pin" inputmode="numeric">
         <input type="text" maxlength="1" class="pin" inputmode="numeric">
@@ -71,7 +74,19 @@
 <script src="/static/app.js"></script>
 
 <div style="position:fixed; bottom:5px; right:10px; font-size:11px; opacity:0.5; color: white;">
-Tennis de Table Thuirinois XDC Validation Version: v2.7
+Tennis de Table Thuirinois XDC Validation Version: v2.8
 </div>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(reg => console.log("✅ SW enregistré", reg))
+      .catch(err => console.error("❌ SW erreur", err));
+  });
+}
+</script>
+
+
 </body>
 </html>
