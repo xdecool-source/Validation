@@ -1,10 +1,21 @@
-// visualisation des dispos 
+// visualisation des dispos a l'écran
 
 let currentSort = "ranking"; // dispo | indispo | ranking
 
 async function loadDays() {
 
-    const res = await fetch("/match-days");
+    const res = await fetch("/match-days", {
+        headers: {
+            Authorization: "Bearer " + localStorage.getItem("token")
+        }
+    });
+    if (res.status === 403) {
+        const data = await res.json();
+        alert(data.detail);
+        localStorage.removeItem("token");
+        location.reload();
+        return;
+    }
     const days = await res.json();
     const select = document.getElementById("match_day_id");
     select.innerHTML = "";
@@ -15,15 +26,11 @@ async function loadDays() {
     days.forEach(day => {
         const opt = document.createElement("option");
         opt.value = day.id;
-        // 
         if (day.date < todayStr) {
             opt.text = "⛔ " + day.code + " (passé)";
-            opt.classList.add("past-day");
         } else {
             opt.text = "✅ " + day.code;
         }
-
-        // sélection automatique
 
         const matchDate = new Date(day.date);
         const diff = Math.abs(matchDate - new Date());
@@ -31,8 +38,10 @@ async function loadDays() {
             smallestDiff = diff;
             closestDayId = day.id;
         }
+
         select.appendChild(opt);
     });
+
     if (closestDayId !== null) {
         select.value = closestDayId;
     }
@@ -50,24 +59,40 @@ async function loadDispos() {
     
     //  console.log("SORT:", currentSort);
     const dayId = document.getElementById("match_day_id").value;
-    const res = await fetch("/dispos/" + dayId);
+    const res = await fetch("/dispos/" + dayId, {
+        headers: {
+            Authorization: "Bearer " + localStorage.getItem("token")
+        }
+    });
+
+    if (res.status === 403) {
+        const data = await res.json();
+        alert(data.detail); //  "Token expiré"
+        localStorage.removeItem("token");
+        location.reload();
+        return;
+    }
     const data = await res.json();
     window.currentData = data;
 
-    // console.log("STOCK DATA:", window.currentData);
+    console.log("STOCK DATA:", window.currentData);
     const tbody = document.getElementById("table-body");
     tbody.innerHTML = "";
-
-        //
         if (!Array.isArray(data)) {
+            console.error("Data invalide:", data);
             // console.error("Erreur API:", data);
             return;
         }
         const count = (row, type) => {
-            if (!row.slots) return 0;
+            if (!row.slots || typeof row.slots !== "string") return 0;
+
             return row.slots.split(",").filter(s => {
-                const parts = s.split(":");
-                const val = parts[parts.length - 1]?.trim().toLowerCase();
+                const [label, valRaw] = s.split(":");
+                const val = valRaw?.trim().toLowerCase();
+
+                // 🔥 ON IGNORE ABSENT
+                if (label === "Absent") return false;
+
                 const isDispo =
                     val === "true" ||
                     val === "1" ||
@@ -79,52 +104,54 @@ async function loadDispos() {
 
         // console.log("SORT ACTUEL:", currentSort);
         if (currentSort === "dispo") {
+
             data.sort((a, b) => {
                 const dispoA = count(a, "disponible");
                 const dispoB = count(b, "disponible");
+
+                // tri strict : plus de dispos en premier
+                if (dispoA !== dispoB) return dispoB - dispoA;
+
+                // moins d’indispos ensuite
                 const indispoA = count(a, "indisponible");
                 const indispoB = count(b, "indisponible");
-                //  PRIORITÉ : 0 indispo (100% dispo)
-                if (indispoA === 0 && indispoB !== 0) return -1;
-                if (indispoB === 0 && indispoA !== 0) return 1;
-                //  ensuite nb de dispos
-                if (dispoA !== dispoB) return dispoB - dispoA;
-                //  ensuite nb d’indispos
-                if (indispoA !== indispoB) return indispoA - indispoB;
-                //  classement
-                return b.ranking - a.ranking;
+
+                return indispoA - indispoB;
             });
 
         } else if (currentSort === "indispo") {
+
             data.sort((a, b) => {
                 const indispoA = count(a, "indisponible");
                 const indispoB = count(b, "indisponible");
-                //  plus d’indispos
+
+                // plus d’indispos en premier
                 if (indispoA !== indispoB) return indispoB - indispoA;
+
+                // moins de dispos ensuite
                 const dispoA = count(a, "disponible");
                 const dispoB = count(b, "disponible");
-                // moins de dispos
-                if (dispoA !== dispoB) return dispoA - dispoB;
-                // classement
-                return b.ranking - a.ranking;
+
+                return dispoA - dispoB;
             });
 
         } else {
             // Tri par classement
-            // console.log("RANKINGS:", data.map(d => d.ranking));
             data.sort((a, b) => b.ranking - a.ranking);
         }
-        //
         
         data.forEach(row => {
-            
+            console.log(row.name, {
+                dispo: count(row, "disponible"),
+                indispo: count(row, "indisponible")
+            });
             const tr = document.createElement("tr");
             if (!row.slots) {
                 console.warn("Pas de slots:", row);
                 return;
             }
             const slots = row.slots.split(",");
-            // 🔥 détecter si au moins une dispo existe
+            //  détecter si au moins une dispo existe
             const hasDispo = slots.some(s => {
                 const parts = s.split(":");
                 const label = parts[0];
@@ -137,7 +164,7 @@ async function loadDispos() {
 
                 return label !== "Absent" && isDispo;
             });
-            const order = ["dimanche_matin", "dimanche_aprem", "samedi_aprem"];
+            const order = ["dimanche_matin", "dimanche_aprem", "samedi_aprem", "Absent"];
             // tri des slots
             slots.sort((a, b) => {
                 const la = a.split(":")[0];
@@ -148,9 +175,6 @@ async function loadDispos() {
                 const parts = s.split(":");
                 const label = parts[0];
                 const val = parts[parts.length - 1]?.trim().toLowerCase();
-
-
-                // 🔥 OBLIGATOIRE
                 const isDispo =
                     val === "true" ||
                     val === "1" ||
@@ -159,7 +183,6 @@ async function loadDispos() {
                 let color = "bg-secondary";
 
                 if (hasDispo) {
-
                     if (label === "Absent") {
                         color = "bg-secondary";
                     } else if (isDispo) {
@@ -167,9 +190,7 @@ async function loadDispos() {
                     } else {
                         color = "bg-secondary";
                     }
-
                 } else {
-
                     if (label === "Absent") {
                         color = "bg-danger";
                     } else if (isDispo) {
@@ -177,22 +198,12 @@ async function loadDispos() {
                     } else {
                         color = "bg-danger";
                     }
-
                 }
 
                 return `<span class="badge ${color} me-1">
                     ${formatLabel(label)}
                 </span>`;
             }).join(" ");
-
-
-    
-
-
-
-
-
-
 
             tr.innerHTML = `
                 <td>${row.name || "-"}</td>
@@ -205,8 +216,9 @@ async function loadDispos() {
         });
 }
 
-// INIT
+// Initialisation
 document.addEventListener("DOMContentLoaded", async () => {
+
     await loadDays();
     loadDispos();
     document
@@ -215,6 +227,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function setSort(type) {
+
     // .log("CLICK SORT:", type); 
     currentSort = type;
     loadDispos(); // recharge avec nouveau tri

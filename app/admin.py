@@ -10,7 +10,7 @@ from app.config import settings
 from sqlalchemy import text
 from dotenv import load_dotenv
 from time import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import io
 import os
@@ -20,9 +20,7 @@ import pytz
 router = APIRouter()
 attempts = {}
 
-# =========================
-# AUTH
-# =========================
+# Autorisation
 
 load_dotenv()
 
@@ -33,49 +31,39 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise Exception("SECRET_KEY non défini !")
 
-
-def create_token(role):
+def create_token(role, user_license):
     payload = {
         "role": role,
-        "exp": datetime.utcnow() + timedelta(minutes=2)
+        "license": user_license,
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=15)
     }
     return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
-
 
 def verify_token(authorization: str = Header(None)):
     if not authorization:
         raise HTTPException(status_code=403, detail="Token manquant")
-
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=403, detail="Format invalide")
-
     try:
         token = authorization.replace("Bearer ", "")
         data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        return data.get("role")
-
+        return data
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=403, detail="Token expiré")
-
+        raise HTTPException(status_code=403, detail="Token expiré Votre session a expiré. Merci de vous reconnecter.")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=403, detail="Token invalide")
-
-
-def require_user(role: str = Depends(verify_token)):
-    if role not in ["user", "admin"]:
-        raise HTTPException(status_code=403, detail="Accès refusé")
-    return role
-
+    
+def require_user(user=Depends(verify_token)):
+    if user["role"] not in ["user", "admin"]:
+        raise HTTPException(status_code=403)
+    return user
 
 def require_admin(role: str = Depends(verify_token)):
     if role != "admin":
         raise HTTPException(status_code=403, detail="Admin requis")
     return role
 
-
-# =========================
-# UTILS
-# =========================
+# Utilitaires
 
 def get_slots_from_date(date_str: str):
     return [
@@ -85,20 +73,28 @@ def get_slots_from_date(date_str: str):
         "Absent"
     ]
 
-
-# =========================
-# INIT DB
-# =========================
+# Init DataBase
 
 @router.get("/init-db")
 def init_db(role: str = Depends(require_admin)):
     Base.metadata.create_all(bind=engine)
     return {"message": "Tables créées"}
 
+@router.get("/auth-player")
+def auth_player(license: str, user=Depends(verify_token)):
+    with engine.connect() as conn:
+        player = conn.execute(text("""
+            SELECT id FROM players WHERE license = :license
+        """), {"license": license}).fetchone()
 
-# =========================
-# LOGIN
-# =========================
+        if not player:
+            raise HTTPException(status_code=404, detail="Licence inconnue")
+    return {
+        "ok": True,
+        "token": create_token("user", license)
+    }   
+     
+# Login
 
 @router.get("/check-access")
 def check_access(code: str, request: Request):
@@ -108,27 +104,20 @@ def check_access(code: str, request: Request):
     if ip in attempts and attempts[ip]["count"] > 5:
         if now - attempts[ip]["time"] < 60:
             raise HTTPException(status_code=429, detail="Trop de tentatives")
-
     if code == ADMIN_PIN:
-        return {"ok": True, "token": create_token("admin")}
-
+        return {"ok": True, "token": create_token("admin", "none")}
     if code == PIN_CODE:
-        return {"ok": True, "token": create_token("user")}
-
+        return {"ok": True, "token": create_token("user", "none")}
     attempts[ip] = {
         "count": attempts.get(ip, {}).get("count", 0) + 1,
         "time": now
     }
-
     return {"ok": False}
 
-
-# =========================
-# PLAYERS
-# =========================
+# Joueurs
 
 @router.get("/joueurs")
-def get_players(role: str = Depends(require_user)):
+def get_days(role: str = Depends(verify_token)):
     with engine.connect() as conn:
         result = conn.execute(text("""
             SELECT id, name, ranking
@@ -140,10 +129,7 @@ def get_players(role: str = Depends(require_user)):
             for row in result
         ]
 
-
-# =========================
-# MATCH DAYS
-# =========================
+# Match du jour 
 
 @router.get("/match-days")
 def get_match_days():
@@ -170,13 +156,10 @@ def init_match_days(role: str = Depends(require_admin)):
 
     return {"message": "Journées configurées"}
 
-
-# =========================
-# PLAYER DATA
-# =========================
+# Joueur et licence
 
 @router.get("/player/{license}")
-def get_player(license: str):
+def get_player(license: str, role: str = Depends(verify_token)):
     with engine.connect() as conn:
 
         player = conn.execute(text("""
@@ -216,7 +199,7 @@ def get_player(license: str):
 
 
 @router.get("/dispos/{match_day_id}")
-def get_dispos(match_day_id: int):
+def get_dispos(match_day_id: int, role: str = Depends(verify_token)):
     try:
         with engine.connect() as conn:
             result = conn.execute(text("""
@@ -241,13 +224,7 @@ def get_dispos(match_day_id: int):
         print(" ERREUR BACKEND:", e)
         return {"error": str(e)}
     
-
-
-# =========================
-# Init match-slot
-# =========================
-
-
+# Initialisation Match
 
 @router.get("/init-match-slots")
 def init_match_slots(role: str = Depends(require_admin)):
@@ -277,53 +254,41 @@ def init_match_slots(role: str = Depends(require_admin)):
 
     return {"message": "match_slots remplie"}   
 
-
-# =========================
-# AVAILABILITY
-# =========================
+# Disponibilité
 
 @router.post("/availability")
 def add_availability(
     data: dict = Body(...),
-    role: str = Depends(verify_token)
+    user=Depends(verify_token)
 ):
+    
+    if user["role"] != "admin" and data["license"] != user["license"]:
+        raise HTTPException(status_code=403, detail="Accès interdit")
 
     with engine.begin() as conn:
 
         player = conn.execute(text("""
             SELECT id FROM players WHERE license = :license
         """), {"license": data["license"]}).fetchone()
-
         if not player:
             raise HTTPException(status_code=400, detail="Licence invalide")
-
         match_day = conn.execute(text("""
             SELECT date FROM match_days WHERE id = :id
         """), {"id": data["match_day_id"]}).fetchone()
-
         if not match_day:
             raise HTTPException(status_code=400, detail="Match day invalide")
-        
-        
         paris = pytz.timezone("Europe/Paris")        
-        
         match_date = datetime.strptime(match_day.date, "%Y-%m-%d")
         match_date = paris.localize(match_date)
-
-        # 🔥 J-4 à 14h
+        
+        #  J-4 à 14h
         limit_date = match_date - timedelta(days=4)
         limit_date = limit_date.replace(hour=14, minute=0, second=0)
-
         now = datetime.now(paris)
-        
+    
         if now >= limit_date:
             raise HTTPException(status_code=403, detail="Saisie verrouillée")
-        
-        
-    
-
         valid_slots = get_slots_from_date(match_day.date)
-
         absent_selected = any(
             s["label"] == "Absent" and s["available"]
             for s in data["slots"]
@@ -332,15 +297,11 @@ def add_availability(
         for slot in data["slots"]:
             label = slot["label"]
             available = slot["available"]
-            
-            # 🔥 correction logique
+            #  correction logique
             if absent_selected and label != "Absent":
                 available = False
-            
-
             if label not in valid_slots:
                 continue
-
             slot_row = conn.execute(text("""
                 SELECT id FROM match_slots
                 WHERE match_day_id = :day_id AND label = :label
@@ -348,7 +309,6 @@ def add_availability(
                 "day_id": data["match_day_id"],
                 "label": label
             }).fetchone()
-
             if not slot_row:
                 continue
 
@@ -367,9 +327,7 @@ def add_availability(
     return {"message": "Validées"}
 
 
-# =========================
-# EXPORT EXCEL
-# =========================
+# Export Excel
 
 @router.get("/export-excel/{match_day_id}")
 def export_excel(match_day_id: int, role: str = Depends(require_admin)):
@@ -384,7 +342,7 @@ def export_excel(match_day_id: int, role: str = Depends(require_admin)):
             JOIN players p ON p.id = a.player_id
             JOIN match_slots s ON s.id = a.slot_id
             WHERE s.match_day_id = :day_id
-              AND a.availability = 'disponible'
+              AND a.availability = true
             ORDER BY s.label, p.ranking DESC
         """), {"day_id": match_day_id})
 
@@ -393,30 +351,24 @@ def export_excel(match_day_id: int, role: str = Depends(require_admin)):
     wb = Workbook()
     ws = wb.active
     ws.title = f"J{match_day_id}"
-
     bold = Font(bold=True)
     ws.cell(row=1, column=1, value="Prénom Nom").font = bold
     ws.cell(row=1, column=2, value="Points").font = bold
-
     grouped = {}
     for row in rows:
         grouped.setdefault(row.label, []).append(row)
-
     row_idx = 3
     order = ["samedi_aprem", "dimanche_matin", "dimanche_aprem"]
 
     for label in order:
         if label not in grouped:
             continue
-
         ws.cell(row=row_idx, column=1, value=label)
         row_idx += 1
-
         for p in grouped[label]:
             ws.cell(row=row_idx, column=1, value=p.name)
             ws.cell(row=row_idx, column=2, value=p.ranking)
             row_idx += 1
-
         row_idx += 1
 
     stream = io.BytesIO()

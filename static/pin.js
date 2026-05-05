@@ -17,11 +17,24 @@ window.addEventListener("DOMContentLoaded", () => {
             try {
                 const res = await fetch("/check-access?code=" + code);
                 const data = await res.json();
-                // console.log("Réponse PIN:", data); 
+                console.log("Réponse PIN:", data); 
 
                 if (data.ok) {
-                    localStorage.setItem("token", data.token);
-                    // console.log("TOKEN STOCKÉ:", data.token);
+
+
+                    // 1️⃣ stocker token temporaire (accès PIN)
+                        localStorage.setItem("token", data.token);
+
+                        // 2️⃣ afficher app
+                        document.getElementById("appContent").style.display = "block";
+                        document.getElementById("pinContainer").style.display = "none";
+
+                        // 3️⃣ attendre que l'utilisateur tape sa licence
+
+
+
+                    console.log("TOKEN STOCKÉ:", data.token);
+                    // await login(code); //  IMPORTANT
                     document.getElementById("appContent").style.display = "block";
                     document.getElementById("pinContainer").style.display = "none";
                     if (typeof initFileInput === "function") {

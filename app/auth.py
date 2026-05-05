@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from fastapi import Header, HTTPException
 from dotenv import load_dotenv
 from fastapi import Depends
+from datetime import datetime, timedelta, timezone
 
 load_dotenv()
 
@@ -11,11 +12,15 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 
 #  Création du token
-def create_token(role: str):
+def create_token(role: str, user_license: str):
+    print("CREATE TOKEN APPELÉ")
     payload = {
         "role": role,
-        "exp": datetime.utcnow() + timedelta(hours=4)
+        "license": user_license,
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=15)  #  Temps expiration token
     }
+    print("UTC NOW:", datetime.utcnow())
+    print("Payload:", payload)
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -29,14 +34,14 @@ def verify_token(authorization: str = Header(None)):
     token = authorization.replace("Bearer ", "")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload.get("role")
+        return payload
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expiré")
+        raise HTTPException(status_code=403, detail="Token expiré")
     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Token invalide")
+        raise HTTPException(status_code=403, detail="Token invalide")
 
 
-# 👑 Vérification admin
+#  Vérification admin
 def require_admin(role: str = Depends(verify_token)):
     if role != "admin":
         raise HTTPException(status_code=403, detail="Accès refusé")

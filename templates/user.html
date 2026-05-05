@@ -74,15 +74,13 @@
 <script src="/static/app.js"></script>
 
 <div style="position:fixed; bottom:5px; right:10px; font-size:11px; opacity:0.5; color: white;">
-Tennis de Table Thuirinois XDC Validation Version: v2.8
+Tennis de Table Thuirinois XDC Validation Version: v2.9
 </div>
 
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js')
-      .then(reg => console.log("✅ SW enregistré", reg))
-      .catch(err => console.error("❌ SW erreur", err));
   });
 }
 </script>

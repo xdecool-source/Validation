@@ -1,5 +1,3 @@
-// generation du fichier excel
-
 function exportExcel() {
 
     const data = window.currentData;
@@ -16,9 +14,7 @@ function exportExcel() {
         if (!r.slots) return;
         r.slots.split(",").forEach(s => {
             const [key] = s.split(":");
-            if (key && key.trim() !== "Absent") {
-                ALL_SLOTS.add(key.trim());
-            }
+            if (key) ALL_SLOTS.add(key.trim());
         });
     });
     const SLOT_LIST = Array.from(ALL_SLOTS);
@@ -30,6 +26,31 @@ function exportExcel() {
         val = val.trim().toLowerCase();
         return val === "true" || val === "1" || val === "disponible";
     };
+
+
+
+    // 👇 AJOUT ICI
+    function isFullyAbsent(row) {
+
+        if (!row.slots || typeof row.slots !== "string") return true;
+
+        const slots = row.slots.split(",");
+
+        // On regarde UNIQUEMENT les vrais créneaux
+        const realSlots = slots.filter(s => {
+            const key = s.split(":")[0]?.trim();
+            return key && key !== "Absent";
+        });
+
+        // Si au moins un créneau est dispo → PAS absent
+        const hasDispo = realSlots.some(s => {
+            const val = s.split(":")[1]?.trim();
+            return isDisponible(val);
+        });
+
+        return !hasDispo;
+    }
+
 
 
     // Format Général
@@ -196,35 +217,31 @@ function exportExcel() {
         }).length;
     }
 
-
 function createAbsentSheet() {
 
-    const rows = data
-        .filter(r => {
-            if (!r.slots) return false;
+    const filtered = data.filter(r => isFullyAbsent(r));
 
-            return r.slots.split(",").some(s => {
-                const [key, val] = s.split(":");
-                return key?.trim() === "Absent" &&
-                       isDisponible(val);
-            });
-        })
+    console.log("ABSENTS :", filtered.map(r => r.name)); // 🔥 DEBUG
+
+    const rows = filtered
         .map(r => ({
             Nom: r.name,
             Classement: r.ranking,
-            Statut: "■ absent"
+            Statut: "■ indisponible"
         }))
         .sort((a, b) => b.Classement - a.Classement);
 
-    const ws = XLSX.utils.json_to_sheet(rows);
+    const headers = ["Nom", "Classement", "Statut"];
+
+    const ws = XLSX.utils.aoa_to_sheet([
+        headers,
+        ...rows.map(r => headers.map(h => r[h]))
+    ]);
 
     ws['!cols'] = autoSizeColumns(rows);
 
     XLSX.utils.book_append_sheet(wb, ws, "Absents");
 }
-
-
-
 
 
 

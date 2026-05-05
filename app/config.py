@@ -17,7 +17,7 @@ class Settings:
     DATABASE_URL: str = os.getenv("DATABASE_URL")  
     MATCH_DAYS = [
         {"id": 1, "code": "J1", "date": "2026-04-17"},
-        {"id": 2, "code": "J2", "date": "2026-10-04"},
+        {"id": 2, "code": "J2", "date": "2026-05-04"},
         {"id": 3, "code": "J3", "date": "2026-10-18"},
         {"id": 4, "code": "J4", "date": "2026-11-08"},
         {"id": 5, "code": "J5", "date": "2026-11-22"},

@@ -95,6 +95,6 @@ function logout() {
 
 window.onload = () => {
     if (localStorage.getItem("access")) {
-        setStatus("🟢 Déjà connecté");
+        setStatus(" Déjà connecté");
     }
 };

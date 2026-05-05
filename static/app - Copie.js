@@ -347,58 +347,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("form");
     if (form) {
         form.addEventListener("input", clearResult);
-
-
-
         form.addEventListener("submit", async function (e) {
             e.preventDefault();
-
             if (!playerValid) {
                 alert("Licence invalide");
                 return;
             }
-
-
-
-
-
-            const checkboxes = Array.from(
-                document.querySelectorAll("#matchDaysContainer input[type=checkbox]")
-            );
-
-            const absentChecked = checkboxes.find(
-                cb => cb.dataset.label === "Absent" && cb.checked
-            );
-
-            // 🔥 construire les slots
-            const slots = checkboxes.map(cb => {
-                if (absentChecked && cb.dataset.label !== "Absent") {
-                    return {
-                        label: cb.dataset.label,
-                        available: false
-                    };
-                }
-                return {
-                    label: cb.dataset.label,
-                    available: cb.checked
-                };
-            });
-
-            // 🔥 VALIDATION RÉELLE
-            const hasRealSelection = slots.some(s => s.available === true);
-
-            if (!hasRealSelection) {
-                alert("Merci de sélectionner au moins un créneau ou 'Absent'");
-                return;
-            }
-
-            // 👇 ton code existant continue ici }
-
-
-
-
-
-
             try {
                 const selectedDay = parseInt(
                     document.getElementById("match_day_id").value
