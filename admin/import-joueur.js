@@ -55,12 +55,21 @@ async function upload() {
         });
     }
 
-    const data = await res.json();
+    let data;
+
+    try {
+        data = await res.json();
+    } catch (e) {
+        const text = await res.text();
+        console.log("RAW RESPONSE:", text);
+        setStatus("❌ Erreur serveur");
+        return;
+    }
     // console.log(data);
 
     if (data.message) {
         if (data.inserted === 0) {
-            setStatus(`⚠️ Aucun nouveau joueur (${data.updated} mis à jour)`);
+            setStatus(`⚠️ Aucun nouveau joueur toujours (${data.updated} joueurs)`);
         } else {
             setStatus(`✅ ${data.nb_total} joueurs (${data.inserted} ajoutés, ${data.updated} mis à jour)`);
         }
@@ -69,7 +78,7 @@ async function upload() {
     } else if (data.error) {
         setStatus("❌ " + data.error);
     } else {
-        setStatus("⚠️ Réponse inconnue");
+        setStatus("⚠️ il faut se reconnecter");
     }
 }
 

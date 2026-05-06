@@ -35,7 +35,7 @@ def create_token(role, user_license):
     payload = {
         "role": role,
         "license": user_license,
-        "exp": datetime.now(timezone.utc) + timedelta(minutes=15)
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=5)
     }
     return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 

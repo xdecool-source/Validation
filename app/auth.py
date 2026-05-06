@@ -17,7 +17,7 @@ def create_token(role: str, user_license: str):
     payload = {
         "role": role,
         "license": user_license,
-        "exp": datetime.now(timezone.utc) + timedelta(minutes=15)  #  Temps expiration token
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=5)  #  Temps expiration token
     }
     print("UTC NOW:", datetime.utcnow())
     print("Payload:", payload)

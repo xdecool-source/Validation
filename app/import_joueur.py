@@ -9,6 +9,7 @@ from app.auth import verify_token
 
 import pandas as pd
 import os
+import io
 
 load_dotenv()
 
@@ -23,18 +24,23 @@ engine = create_engine(DATABASE_URL)
 
 @router.post("/admin/import-joueur")
 async def import_joueur(
-    
     file: UploadFile = File(...),
     role: str = Depends(verify_token)
-):
-    
+ ):
     print("🚨 ROUTE IMPORT EXECUTÉE")
-    
-    if role != "admin":
+    print("ROLE VALUE:", role)
+    if role.get("role") != "admin":
         raise HTTPException(status_code=403)
-
+    print("📂 FILENAME:", file.filename)
+    print("📦 CONTENT TYPE:", file.content_type)
     try:
-        df = pd.read_excel(file.file, sheet_name=0, dtype=str)
+        content = await file.read()
+        print("📦 SIZE:", len(content))
+
+        df = pd.read_excel(io.BytesIO(content), sheet_name=0, dtype=str)
+        print("✅ EXCEL LU")
+        print("COLUMNS:", df.columns.tolist())
+        print("NB ROWS:", len(df))
         df.columns = df.columns.str.strip()
         players = []
 
@@ -90,5 +96,6 @@ async def import_joueur(
         }
         
     except Exception as e:
-        return {"error": str(e)}
+        print("❌ ERREUR IMPORT:", repr(e))
+        raise HTTPException(status_code=500, detail=str(e))
     
