@@ -27,20 +27,20 @@ async def import_joueur(
     file: UploadFile = File(...),
     role: str = Depends(verify_token)
  ):
-    print("🚨 ROUTE IMPORT EXECUTÉE")
-    print("ROLE VALUE:", role)
+    # print("ROUTE IMPORT EXECUTÉE")
+    # print("ROLE VALUE:", role)
     if role.get("role") != "admin":
         raise HTTPException(status_code=403)
-    print("📂 FILENAME:", file.filename)
-    print("📦 CONTENT TYPE:", file.content_type)
+    # print(" FILENAME:", file.filename)
+    # print(" CONTENT TYPE:", file.content_type)
     try:
         content = await file.read()
-        print("📦 SIZE:", len(content))
+        # print(" SIZE:", len(content))
 
         df = pd.read_excel(io.BytesIO(content), sheet_name=0, dtype=str)
-        print("✅ EXCEL LU")
-        print("COLUMNS:", df.columns.tolist())
-        print("NB ROWS:", len(df))
+        # print("EXCEL LU")
+        # print("COLUMNS:", df.columns.tolist())
+        # print("NB ROWS:", len(df))
         df.columns = df.columns.str.strip()
         players = []
 
@@ -52,7 +52,7 @@ async def import_joueur(
             email = str(row.iloc[23]).strip() if row.iloc[23] else ""
 
             if pd.isna(license_number) or pd.isna(last_name):
-                print("SKIPPED")
+                # print("SKIPPED")
                 continue
 
             players.append({
@@ -96,6 +96,6 @@ async def import_joueur(
         }
         
     except Exception as e:
-        print("❌ ERREUR IMPORT:", repr(e))
+        # print("ERREUR IMPORT:", repr(e))
         raise HTTPException(status_code=500, detail=str(e))
     

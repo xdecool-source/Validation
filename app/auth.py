@@ -13,14 +13,14 @@ ALGORITHM = "HS256"
 
 #  Création du token
 def create_token(role: str, user_license: str):
-    print("CREATE TOKEN APPELÉ")
+    # print("CREATE TOKEN APPELÉ")
     payload = {
         "role": role,
         "license": user_license,
         "exp": datetime.now(timezone.utc) + timedelta(minutes=5)  #  Temps expiration token
     }
-    print("UTC NOW:", datetime.utcnow())
-    print("Payload:", payload)
+    # print("UTC NOW:", datetime.utcnow())
+    # print("Payload:", payload)
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 

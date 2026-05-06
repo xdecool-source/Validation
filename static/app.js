@@ -1,3 +1,5 @@
+// Gestion des Absences pour le TT Thuirinois
+
 let matchDays = [];
 let isAdmin = false;
 let playerValid = false;
@@ -12,16 +14,16 @@ const SLOTS = [
 ];
 
 async function login(code) {
-    console.log("TOKEN:", token);
-    console.log("LOGIN CALLED");
+    // console.log("Token:", token);
+    // console.log("Login Appélé");
     const payload = JSON.parse(atob(token.split(".")[1]));
-    console.log("PAYLOAD:", payload);
+    // console.log("Chargement:", payload);
     const license = document.getElementById("license").value.trim();
     if (!license) {
         alert("Entre ta licence");
         return;
     }
-    // 1️⃣ vérifier le PIN
+    // 1  vérifier le PIN
     const res = await fetch(`/check-access?code=${code}`);
     const data = await res.json();
 
@@ -30,11 +32,11 @@ async function login(code) {
         return;
     }
 
-    // 2️⃣ récupérer token AVEC licence
+    // 2 récupérer token AVEC licence
     const authRes = await fetch(`/auth-player?license=${license}`);
     const authData = await authRes.json();
-    console.log("AUTH STATUS:", authRes.status);
-    console.log("AUTH DATA:", authData);
+    // console.log("Autorisation Status:", authRes.status);
+    // console.log("Autorisation Données:", authData);
     token = authData.token;
     localStorage.setItem("token", token);
     await loadData();
@@ -44,10 +46,8 @@ function checkAdmin() {
 
     const token = localStorage.getItem("token");
     if (!token) return;
-
     try {
         const payload = JSON.parse(atob(token.split(".")[1]));
-
         if (payload.role === "admin") {
             isAdmin = true;
             const importForm = document.getElementById("importForm");
@@ -66,7 +66,6 @@ function getSlotsFromDate(dateStr) {
 
     const date = new Date(dateStr + "T00:00:00");
     const day = date.getDay(); // 6 = samedi, 0 = dimanche
-
     if (day === 6) {
         return [{ label: "samedi_aprem" }];
     }
@@ -85,9 +84,7 @@ function renderSlotsForSelectedDay() {
 
     const container = document.getElementById("matchDaysContainer");
     const daySelect = document.getElementById("match_day_id");
-
     if (!container || !daySelect) return;
-
     const slots = SLOTS; 
     container.innerHTML = "";
     slots.forEach(slot => {
@@ -158,7 +155,7 @@ async function safeFetch(url) {
         const message = data.detail || "Accès refusé";
         alert(message); // affiche "Token expiré"
         if (data.detail === "Token expiré") {
-            alert("⏱️ Votre session a expiré. Merci de vous reconnecter.");
+            alert("Votre session a expiré. Merci de vous reconnecter.");
             localStorage.removeItem("token");
             location.reload();
         }
@@ -196,9 +193,7 @@ function applySlots(slots) {
     // reset
     checkboxes.forEach(cb => cb.checked = false);
     if (absent) absent.checked = false;
-
     const isAbsent = slots.find(s => s.label === "Absent" && s.available);
-
     if (isAbsent) {
         if (absent) absent.checked = true;
         return;
@@ -257,7 +252,7 @@ function updateClosureInfo() {
     const locked = isLocked(day);
     closureDiv.innerHTML = `
     <div class="${locked ? "closure-locked" : "closure-open"}">
-        ⏱ On clôture le ${parts[1]} à 14H00
+        On clôture le ${parts[1]} à 14H00
     </div>
     `;
 }
@@ -267,7 +262,7 @@ function updateClosureInfo() {
 async function loadData() {
     try {
         matchDays = await safeFetch("/match-days");
-        console.log("MATCH DAYS BACKEND:", matchDays); 
+        // console.log("MATCH DAYS BACKEND:", matchDays); 
         const daySelect = document.getElementById("match_day_id");
 
         if (daySelect) {
@@ -321,17 +316,34 @@ async function loadData() {
 
 // Init
 
-document.addEventListener("DOMContentLoaded", () => {
-
+document.addEventListener("DOMContentLoaded", async () => {
+    document.body.style.visibility = "hidden";
      checkAdmin();
-    if (localStorage.getItem("token")) {
-        loadData();  // ✅ seulement si connecté
+
+    // initialise la zone de saisie licence
+    const licenseInput = document.getElementById("license");
+
+    // reset licence
+    if (licenseInput) {
+        licenseInput.value = "";
     }
-    setTimeout(() => {
-        updateClosureInfo(); // 
-        const input = document.getElementById("license");
-        if (input) input.focus();
-    }, 300);
+
+    // reset affichage joueur
+    document.getElementById("player_name").textContent = "";
+    document.getElementById("player_info").textContent = "";
+
+    // IMPORTANT
+    if (localStorage.getItem("token")) {
+        await loadData();
+    }
+
+    document.body.style.visibility = "visible";
+
+    updateClosureInfo();
+
+    if (licenseInput) {
+        licenseInput.focus();
+    }
 
     const daySelect = document.getElementById("match_day_id");
     if (daySelect) {
@@ -341,36 +353,25 @@ document.addEventListener("DOMContentLoaded", () => {
             if (window.currentAvailability) {
                 updateAvailabilityUI();
             }
-            updateClosureInfo(); // 👈 ICI
+            updateClosureInfo(); 
         });
     }
     const form = document.getElementById("form");
     if (form) {
         form.addEventListener("input", clearResult);
-
-
-
         form.addEventListener("submit", async function (e) {
             e.preventDefault();
-
             if (!playerValid) {
                 alert("Licence invalide");
                 return;
             }
-
-
-
-
-
             const checkboxes = Array.from(
                 document.querySelectorAll("#matchDaysContainer input[type=checkbox]")
             );
-
             const absentChecked = checkboxes.find(
                 cb => cb.dataset.label === "Absent" && cb.checked
             );
-
-            // 🔥 construire les slots
+            // construire les slots
             const slots = checkboxes.map(cb => {
                 if (absentChecked && cb.dataset.label !== "Absent") {
                     return {
@@ -384,20 +385,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
             });
 
-            // 🔥 VALIDATION RÉELLE
+            // VALIDATION RÉELLE
             const hasRealSelection = slots.some(s => s.available === true);
 
             if (!hasRealSelection) {
                 alert("Merci de sélectionner au moins un créneau ou 'Absent'");
                 return;
             }
-
-            // 👇 ton code existant continue ici }
-
-
-
-
-
 
             try {
                 const selectedDay = parseInt(
@@ -447,7 +441,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Licence 
 
-    const licenseInput = document.getElementById("license");
+    // const licenseInput = document.getElementById("license");
     if (licenseInput) {
         let timeout;
         licenseInput.addEventListener("focus", resetField);
@@ -467,15 +461,11 @@ document.addEventListener("DOMContentLoaded", () => {
             playerValid = false;
         }
 
-        // xde
-
         licenseInput.addEventListener("input", () => {
-    clearTimeout(timeout);
+        clearTimeout(timeout);
 
-    timeout = setTimeout(async () => {
-
+        timeout = setTimeout(async () => {
         const license = licenseInput.value.trim();
-
         if (!/^[0-9]{6,}$/.test(license)) {
             playerValid = false;
             return;
@@ -486,9 +476,8 @@ document.addEventListener("DOMContentLoaded", () => {
         window.currentAvailability = null;
 
         try {
-            console.log("=== START FLOW ===");
-
-            // 🔥 1. récupérer token PIN (obligatoire)
+            //console.log("=== START FLOW ===");
+            // 1. récupérer token PIN (obligatoire)
             const pinToken = localStorage.getItem("token");
 
             if (!pinToken) {
@@ -496,21 +485,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 location.reload();
                 return;
             }
-
-            console.log("PIN TOKEN:", pinToken);
-
-            // 🔥 2. demander token joueur
+            // console.log("PIN TOKEN:", pinToken);
+            // 2. demander token joueur
             const authRes = await fetch(`/auth-player?license=${license}`, {
                 headers: {
                     Authorization: "Bearer " + pinToken
                 }
             });
 
-            console.log("AUTH STATUS:", authRes.status);
+            // console.log("Autorisation Statut:", authRes.status);
 
             if (!authRes.ok) {
                 const err = await authRes.json();
-                console.log("AUTH ERROR:", err);
+                // console.log("AUTH ERROR:", err);
 
                 // document.getElementById("player_info").textContent = "❌ Xavier Licence inconnue";
                 document.getElementById("player_info").textContent = "❌ Veuillez vous reconnecter";
@@ -521,48 +508,42 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const authData = await authRes.json();
-
             const playerToken = authData.token;
 
             if (!playerToken) {
-                console.log("❌ PAS DE TOKEN JOUEUR");
+                // console.log("Pas de token joueur");
                 return;
             }
 
-            console.log("✅ PLAYER TOKEN:", playerToken);
-
-            // 🔥 IMPORTANT : on remplace le token
+            // console.log("Token joueur:", playerToken);
+            // IMPORTANT : on remplace le token
             localStorage.setItem("token", playerToken);
 
-            // 🔥 3. appeler player avec BON token
+            // 3. appeler player avec BON token
             const res = await fetch(`/player/${license}`, {
                 headers: {
                     Authorization: "Bearer " + playerToken
                 }
             });
 
-            console.log("PLAYER STATUS:", res.status);
-
+            // console.log("Statut joueur:", res.status);
             if (!res.ok) {
-                console.log("❌ PLAYER FAIL");
+                // console.log("Erreur Joueur");
                 playerValid = false;
                 return;
             }
-
             const data = await res.json();
-            console.log("PLAYER DATA:", data);
-
+            // console.log("Donnée joueur:", data);
             const nameDiv = document.getElementById("player_name");
             const infoDiv = document.getElementById("player_info");
-
             if (!data.name) {
-                infoDiv.textContent = "❌ Licence inconnue";
+                infoDiv.textContent = "Licence inconnue";
                 infoDiv.classList.add("show");
                 playerValid = false;
                 return;
             }
 
-            // ✅ OK
+            // Ok
             nameDiv.textContent = data.name;
             nameDiv.classList.add("show");
 
@@ -571,7 +552,7 @@ document.addEventListener("DOMContentLoaded", () => {
             renderSlotsForSelectedDay();
             setSlotsDisabled(false);
 
-            // 🔥 FIX affichage
+            // affichage
             setTimeout(() => {
                 if (data.availability?.length > 0) {
                     infoDiv.textContent = "✔ Voici vos disponibilités";
@@ -586,35 +567,30 @@ document.addEventListener("DOMContentLoaded", () => {
             }, 50);
 
         } catch (err) {
-            console.error("💥 ERROR:", err);
+            console.error("ERROR:", err);
         }
 
     }, 300);
 });
 
-        // xde 
-    }
-});
+}
+ });
 
 function updateAvailabilityUI() {
 
     if (isUpdatingUI) return;
     isUpdatingUI = true;
-
     const checkboxes = document.querySelectorAll("#matchDaysContainer input[type=checkbox]");
-    
-    // 🔁 reset systématique
+    // reset systématique
     checkboxes.forEach(cb => cb.checked = false);
 
     if (!window.currentAvailability) {
         isUpdatingUI = false;
         return;
     }
-
     const selectedDay = parseInt(
         document.getElementById("match_day_id").value
     );
-
     const dayData = window.currentAvailability.find(d =>
         parseInt(d.match_day_id) === selectedDay
     );
@@ -622,9 +598,7 @@ function updateAvailabilityUI() {
     if (dayData && dayData.slots) {
         applySlots(dayData.slots);
     } else {
-        // ✅ IMPORTANT : aucun data → tout décoché
         resetSlots();
     }
-
     isUpdatingUI = false;
 }
