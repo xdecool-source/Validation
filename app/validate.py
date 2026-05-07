@@ -10,6 +10,7 @@ from app.import_joueur import router as import_router
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from app.admin import init_match_slots
+from sqlalchemy import text
 
 import os
 
@@ -24,6 +25,11 @@ if not SECRET_KEY:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print(" Vérification / création des tables...")
+    
+    # Pour reveiller la base avant le premier insert 
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+        
     Base.metadata.create_all(bind=engine)
     init_match_days()
     init_match_slots() 

@@ -27,7 +27,6 @@ CREATE TABLE match_slots (
     )
 );
 
-
 CREATE TABLE availabilities (
     id SERIAL PRIMARY KEY,
 
@@ -42,7 +41,6 @@ CREATE TABLE availabilities (
     CONSTRAINT unique_player_slot_day
     UNIQUE (player_id, slot_id, match_day_id)
 );
-
 
 CREATE TABLE selections (
     id SERIAL PRIMARY KEY,
