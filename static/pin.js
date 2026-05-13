@@ -4,6 +4,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
     const inputs = document.querySelectorAll(".pin");
     inputs.forEach(i => i.value = "");
+    // Focus automatique
+    setTimeout(() => {
+        inputs[0].focus();
+    }, 100);
     inputs[0].focus();
     inputs.forEach((input, index) => {
         input.addEventListener("keyup", async () => {
@@ -30,7 +34,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
                     // 3️ attendre que l'utilisateur tape sa licence
                     // console.log("TOKEN STOCKÉ:", data.token);
-                    // await login(code); //  IMPORTANT
+                    // await login(code); 
                     document.getElementById("appContent").style.display = "block";
                     document.getElementById("pinContainer").style.display = "none";
 
