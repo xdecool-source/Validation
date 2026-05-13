@@ -3,7 +3,7 @@
 # http://127.0.0.1:8000/admin-dispo
 # http://127.0.0.1:8000/?admin=valeur_de_admin_token
 # http://127.0.0.1:8000/export-excel/1 
-# 1 = J1 journée 1
+# 1 = J1 journée 1 2026-09-20
 
 from dotenv import load_dotenv
 import os
@@ -12,7 +12,7 @@ load_dotenv()
 class Settings:
     DATABASE_URL: str = os.getenv("DATABASE_URL")  
     MATCH_DAYS = [
-        {"id": 1, "code": "J1", "date": "2026-09-20"},
+        {"id": 1, "code": "J1", "date": "2026-05-17"},
         {"id": 2, "code": "J2", "date": "2026-10-04"},
         {"id": 3, "code": "J3", "date": "2026-10-18"},
         {"id": 4, "code": "J4", "date": "2026-11-08"},

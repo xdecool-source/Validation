@@ -216,8 +216,8 @@ function isLocked(day) {
     const now = new Date();
     const matchDate = new Date(day.date + "T00:00:00");
     const limitDate = new Date(matchDate);
-    //  J-4
-    limitDate.setDate(limitDate.getDate() - 4);
+    //  Nombre de jours avant la date de championnat voir config.js
+    limitDate.setDate(limitDate.getDate() - Datelimite);
     //  heure fixe 14h
     limitDate.setHours(14, 0, 0, 0);
     return now >= limitDate;
@@ -230,8 +230,8 @@ function getClosureDate(day) {
     if (!day.date) return "";
     const matchDate = new Date(day.date + "T00:00:00");
     const limitDate = new Date(matchDate);
-    //  J-4
-    limitDate.setDate(limitDate.getDate() - 4);
+    //  Nombre de jours avant la date de championnat voir config.js : date de cloture 
+    limitDate.setDate(limitDate.getDate() - Datelimite);
     //  14h
     limitDate.setHours(14, 0, 0, 0);
     const d = String(limitDate.getDate()).padStart(2, "0");
@@ -262,7 +262,7 @@ function updateClosureInfo() {
 async function loadData() {
     try {
         matchDays = await safeFetch("/match-days");
-        // console.log("MATCH DAYS BACKEND:", matchDays); 
+        // console.log("Jours de match  Backend:", matchDays); 
         const daySelect = document.getElementById("match_day_id");
 
         if (daySelect) {
@@ -282,12 +282,17 @@ async function loadData() {
                     nextDays.push(day);
                 }
             });
-            //  2. ajouter la première journée NON verrouillée
+            //  2. ajouter les deux premières journées NON verrouillée
+            let added = 0;
+
             for (let i = 0; i < futureDays.length; i++) {
                 const day = futureDays[i];
+
                 if (!isLocked(day)) {
                     nextDays.push(day);
-                    break;
+                    added++;
+
+                    if (added >= Max_affiche_jour_valide) break;
                 }
             }
 
@@ -503,7 +508,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 document.getElementById("player_info").textContent = "❌ Veuillez vous reconnecter";
                 document.getElementById("player_info").classList.add("show");
                 playerValid = false;
-                alert("Veuillez vous reconnecter");
+                alert("Veuillez vous reconnecter ou Absence de joueur");
                 return;
             }
 
