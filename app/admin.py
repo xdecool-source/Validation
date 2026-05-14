@@ -105,9 +105,13 @@ def check_access(code: str, request: Request):
         if now - attempts[ip]["time"] < 60:
             raise HTTPException(status_code=429, detail="Trop de tentatives")
     if code == ADMIN_PIN:
+        attempts[ip] = {"count": 0, "time": now}
         return {"ok": True, "token": create_token("admin", "none")}
+        
     if code == PIN_CODE:
+        attempts[ip] = {"count": 0, "time": now}
         return {"ok": True, "token": create_token("user", "none")}
+    
     attempts[ip] = {
         "count": attempts.get(ip, {}).get("count", 0) + 1,
         "time": now

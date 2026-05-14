@@ -1,69 +1,84 @@
-// Gestion du code PIN à 6 chiffres
+// Gestion de la saisie du code PIN 
+
+let checkingPin = false;
 
 window.addEventListener("DOMContentLoaded", () => {
 
-    const inputs = document.querySelectorAll(".pin");
-    inputs.forEach(i => i.value = "");
-    // Focus automatique
+    const pinInput = document.getElementById("pinInput");
+
     setTimeout(() => {
-        inputs[0].focus();
-    }, 100);
-    inputs[0].focus();
-    inputs.forEach((input, index) => {
-        input.addEventListener("keyup", async () => {
-            input.value = input.value.replace(/[^0-9]/g, "");
-            if (!input.value) return;
-            if (index < inputs.length - 1) {
-                inputs[index + 1].focus();
+        pinInput.focus();
+        pinInput.click();
+    }, 300);
+
+
+    // Saisie PIN
+    pinInput.addEventListener("input", async () => {
+        if (checkingPin) return;
+        pinInput.value =
+            pinInput.value
+                .replace(/[^0-9]/g, "")
+                .slice(0, 6);
+
+        if (pinInput.value.length !== 6) return;
+        checkingPin = true;
+        pinInput.disabled = true;        
+        const code = pinInput.value;
+        // console.log("CODE ENVOYÉ :", code);
+
+        try {
+            const res = await fetch(
+                "/check-access?code=" + code
+            );
+            if (res.status === 429) {
+                alert("Trop de tentatives ⏳");
+                resetPin();
+                return;
             }
-            const code = Array.from(inputs).map(i => i.value).join("");
-            if (code.length !== 6) return;
-            try {
-                const res = await fetch("/check-access?code=" + code);
-                const data = await res.json();
-                // console.log("Réponse PIN:", data); 
-
-                if (data.ok) {
-
-                    // 1️ stocker token temporaire (accès PIN)
-                    localStorage.setItem("token", data.token);
-
-                    // 2️ afficher app
-                    document.getElementById("appContent").style.display = "block";
-                    document.getElementById("pinContainer").style.display = "none";
-
-                    // 3️ attendre que l'utilisateur tape sa licence
-                    // console.log("TOKEN STOCKÉ:", data.token);
-                    // await login(code); 
-                    document.getElementById("appContent").style.display = "block";
-                    document.getElementById("pinContainer").style.display = "none";
-
-                    if (typeof initFileInput === "function") {
-                        initFileInput();
+            const data = await res.json();
+            if (data.ok) {
+                localStorage.setItem(
+                    "token",
+                    data.token
+                );
+                document.getElementById("appContent")
+                    .style.display = "block";
+                document.getElementById("pinContainer")
+                    .style.display = "none";
+                if (typeof initFileInput === "function") {
+                    initFileInput();
+                }
+                setTimeout(() => {
+                    if (typeof checkAdmin === "function") {
+                        checkAdmin();
                     }
-                    // attendre cookie
-                    setTimeout(() => {
-                        if (typeof checkAdmin === "function") {
-                            checkAdmin();
-                        }
-                        if (typeof loadData === "function") {
-                            loadData();
-                        }
-                    }, 200);
-                }
-                else {
-                    alert("Code incorrect ❌");
-                    inputs.forEach(i => i.value = "");
-                    inputs[0].focus();
-                }
-            } catch (err) {
-                console.error(err);
+
+                    if (typeof loadData === "function") {
+                        // console.log("LOAD DATA");
+                        loadData();
+                    }
+                }, 200);
+            } else {
+                // Afficher le PIN 0.5 sec
+                pinInput.type = "text";
+                await new Promise(resolve =>
+                    setTimeout(resolve, 500)
+                );
+                alert("Code incorrect ❌");
+                resetPin();
             }
-        });
-        input.addEventListener("keydown", (e) => {
-            if (e.key === "Backspace" && !input.value && index > 0) {
-                inputs[index - 1].focus();
-            }
-        });
+        } catch (err) {
+            console.error(err);
+            resetPin();
+        }
     });
+
+    function resetPin() {
+
+        checkingPin = false;
+        pinInput.disabled = false;
+        pinInput.type = "password";
+        pinInput.value = "";
+        pinInput.focus();
+    }
 });
