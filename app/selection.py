@@ -1,3 +1,8 @@
+# Récupére les joueurs disponibles 
+# Priorise ceux qui ont le moins joué 
+# Sélectionne les meilleurs classements 
+# Enregistre les joueurs choisis dans la table des sélections.
+
 def generate_team(db, match_day_id, team_size=4):
     result = db.execute("""
         SELECT p.id, p.name, p.ranking,

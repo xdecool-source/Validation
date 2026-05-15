@@ -1,4 +1,11 @@
 # Gestion connexion a l'application Validation
+# gérer la connexion avec tokens/JWT et rôles admin/utilisateur ;
+# enregistrer les disponibilités des joueurs pour les matchs ;
+# sécuriser l’accès avec codes PIN et limite de tentatives ;
+# stocker les données en base SQL ;
+# exporter les disponibilités en fichier Excel.
+# attempts[ip]["count"] > 5  nombre de tentative avant blocage donc 6
+# attempts[ip]["time"] < 60 durée de blocage 60 secondes 
 
 from fastapi import APIRouter, Body, HTTPException, Request, Header, Depends
 from fastapi.responses import StreamingResponse
@@ -6,11 +13,12 @@ from app.database import engine
 from app.models import Base
 from openpyxl import Workbook
 from openpyxl.styles import Font
-from app.config import settings
+from app.config import settings, temps_expi_token
 from sqlalchemy import text
 from dotenv import load_dotenv
 from time import time
 from datetime import datetime, timedelta, timezone
+from app.auth import require_admin
 
 import io
 import os
@@ -20,6 +28,13 @@ import pytz
 router = APIRouter()
 attempts = {}
 
+from app.auth import (
+    create_token,
+    verify_token,
+    require_user,
+    require_admin
+)
+
 # Autorisation
 
 load_dotenv()
@@ -27,41 +42,6 @@ load_dotenv()
 PIN_CODE = os.getenv("PIN_CODE")
 ADMIN_PIN = os.getenv("ADMIN_PIN")
 SECRET_KEY = os.getenv("SECRET_KEY")
-
-if not SECRET_KEY:
-    raise Exception("SECRET_KEY non défini !")
-
-def create_token(role, user_license):
-    payload = {
-        "role": role,
-        "license": user_license,
-        "exp": datetime.now(timezone.utc) + timedelta(minutes=5)
-    }
-    return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
-
-def verify_token(authorization: str = Header(None)):
-    if not authorization:
-        raise HTTPException(status_code=403, detail="Token manquant")
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=403, detail="Format invalide")
-    try:
-        token = authorization.replace("Bearer ", "")
-        data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        return data
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=403, detail="Token expiré Votre session a expiré. Merci de vous reconnecter.")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=403, detail="Token invalide")
-    
-def require_user(user=Depends(verify_token)):
-    if user["role"] not in ["user", "admin"]:
-        raise HTTPException(status_code=403)
-    return user
-
-def require_admin(role: str = Depends(verify_token)):
-    if role != "admin":
-        raise HTTPException(status_code=403, detail="Admin requis")
-    return role
 
 # Utilitaires
 
@@ -203,7 +183,10 @@ def get_player(license: str, role: str = Depends(verify_token)):
 
 
 @router.get("/dispos/{match_day_id}")
-def get_dispos(match_day_id: int, role: str = Depends(verify_token)):
+def get_dispos(
+    match_day_id: int,
+    user=Depends(require_admin)
+):
     try:
         with engine.connect() as conn:
             result = conn.execute(text("""
@@ -332,57 +315,3 @@ def add_availability(
 
 
 # Export Excel
-
-@router.get("/export-excel/{match_day_id}")
-def export_excel(match_day_id: int, role: str = Depends(require_admin)):
-
-    with engine.connect() as conn:
-        result = conn.execute(text("""
-            SELECT 
-                p.name,
-                p.ranking,
-                s.label
-            FROM availabilities a
-            JOIN players p ON p.id = a.player_id
-            JOIN match_slots s ON s.id = a.slot_id
-            WHERE s.match_day_id = :day_id
-              AND a.availability = true
-            ORDER BY s.label, p.ranking DESC
-        """), {"day_id": match_day_id})
-
-        rows = result.fetchall()
-
-    wb = Workbook()
-    ws = wb.active
-    ws.title = f"J{match_day_id}"
-    bold = Font(bold=True)
-    ws.cell(row=1, column=1, value="Prénom Nom").font = bold
-    ws.cell(row=1, column=2, value="Points").font = bold
-    grouped = {}
-    for row in rows:
-        grouped.setdefault(row.label, []).append(row)
-    row_idx = 3
-    order = ["samedi_aprem", "dimanche_matin", "dimanche_aprem"]
-
-    for label in order:
-        if label not in grouped:
-            continue
-        ws.cell(row=row_idx, column=1, value=label)
-        row_idx += 1
-        for p in grouped[label]:
-            ws.cell(row=row_idx, column=1, value=p.name)
-            ws.cell(row=row_idx, column=2, value=p.ranking)
-            row_idx += 1
-        row_idx += 1
-
-    stream = io.BytesIO()
-    wb.save(stream)
-    stream.seek(0)
-
-    return StreamingResponse(
-        stream,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={
-            "Content-Disposition": f"attachment; filename=journee_{match_day_id}.xlsx"
-        }
-    )

@@ -1,4 +1,14 @@
-// visualisation des dispos a l'écran
+// visualisation des dispos a l'écran pour les admins
+// Chargement des journées de match
+// Récupéreration des disponibilités via l’API /dispos/{id}
+// Affiche les joueurs dans un tableau HTML
+// Affiche des badges couleur (dispo / indispo / absent)
+// Trie les joueurs :
+//                  par classement
+//                  par nombre de disponibilités 
+//                  par nombre d’indisponibilités
+// const res = await fetch("/dispos/" + dayId) demande la liste dans admin.py
+// tbody.appendChild(tr); affiche chaque joueur dynamiquement dans le tableau html
 
 let currentSort = "ranking"; // dispo | indispo | ranking
 
@@ -26,21 +36,23 @@ async function loadDays() {
     days.forEach(day => {
         const opt = document.createElement("option");
         opt.value = day.id;
+        console.log("day.date =", day.date);
+        console.log("todayStr =", todayStr);
         if (day.date < todayStr) {
             opt.text = "⛔ " + day.code + " (passé)";
         } else {
             opt.text = "✅ " + day.code;
         }
-
         const matchDate = new Date(day.date);
         const diff = Math.abs(matchDate - new Date());
         if (diff < smallestDiff) {
             smallestDiff = diff;
             closestDayId = day.id;
         }
-
         select.appendChild(opt);
     });
+
+    
 
     if (closestDayId !== null) {
         select.value = closestDayId;
@@ -90,7 +102,7 @@ async function loadDispos() {
                 const [label, valRaw] = s.split(":");
                 const val = valRaw?.trim().toLowerCase();
 
-                // 🔥 ON IGNORE ABSENT
+                //  ON IGNORE ABSENT
                 if (label === "Absent") return false;
 
                 const isDispo =

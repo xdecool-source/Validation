@@ -1,3 +1,10 @@
+# Création des tables :
+#       joueurs (players) 
+#       journées de match (match_days) 
+#       créneaux de disponibilité (match_slots) 
+#       disponibilités des joueurs (availabilities) 
+#       sélections d’équipes (selections).
+
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Index, UniqueConstraint
 from sqlalchemy.orm import declarative_base
 

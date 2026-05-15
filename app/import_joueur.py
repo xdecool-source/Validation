@@ -1,9 +1,12 @@
 # Import des joueurs a partir fichier export de SPID
+# Importer automatique des joueurs depuis un fichier export SPID (Excel)
+# récupérer licences, noms, points et emails
+# Ajout ou MAJ des joueurs en base
+# Compte le nombre de joueurs créés ou modifiés.
 
 from fastapi import UploadFile, File, APIRouter, HTTPException
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
-
 from fastapi import Depends
 from app.auth import verify_token
 
@@ -13,14 +16,11 @@ import io
 
 load_dotenv()
 
-# remplace ADMIN_TOKEN par ADMIN_PIN
-
 router = APIRouter()
 ADMIN_PIN = os.getenv("ADMIN_PIN")
     
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
-
 
 @router.post("/admin/import-joueur")
 async def import_joueur(

@@ -1,4 +1,13 @@
 // Gestion des Absences pour le TT Thuirinois
+// Connecte les joueurs avec licence + PIN
+// Gére les tokens JWT côté navigateur
+// Affiche les journées de match
+// Affiche les créneaux disponibles
+// Charge les disponibilités déjà enregistrées
+// Envoye les nouvelles disponibilités au backend
+// Verrouille les journées après la date limite
+// Gére les droits admin
+// Maj dynamiquement l’interface HTML
 
 let matchDays = [];
 let isAdmin = false;

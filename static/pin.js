@@ -1,4 +1,10 @@
 // Gestion de la saisie du code PIN 
+// Récupéreration du code PIN tapé par l’utilisateur
+// Envoie le PIN au backend /check-access
+// Recois le token JWT
+// Sauvegarde du token dans localStorage
+// Affiche l'APP  après authentification 
+// Gére les erreurs et blocages anti-spam
 
 let checkingPin = false;
 
@@ -16,9 +22,9 @@ window.addEventListener("DOMContentLoaded", () => {
     pinInput.addEventListener("input", async () => {
         if (checkingPin) return;
         pinInput.value =
-            pinInput.value
-                .replace(/[^0-9]/g, "")
-                .slice(0, 6);
+            pinInput.value =
+                pinInput.value
+                    .slice(0, 20);
 
         if (pinInput.value.length !== 6) return;
         checkingPin = true;
@@ -31,7 +37,7 @@ window.addEventListener("DOMContentLoaded", () => {
                 "/check-access?code=" + code
             );
             if (res.status === 429) {
-                alert("Trop de tentatives ⏳");
+                alert("Trop de tentatives ");
                 resetPin();
                 return;
             }
@@ -64,7 +70,7 @@ window.addEventListener("DOMContentLoaded", () => {
                 await new Promise(resolve =>
                     setTimeout(resolve, 500)
                 );
-                alert("Code incorrect ❌");
+                alert("Code incorrect ");
                 resetPin();
             }
         } catch (err) {

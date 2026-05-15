@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 import os
 load_dotenv()
 
+temps_expi_token = 5
+
 class Settings:
     DATABASE_URL: str = os.getenv("DATABASE_URL")  
     MATCH_DAYS = [

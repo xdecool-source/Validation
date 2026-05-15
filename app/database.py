@@ -1,3 +1,7 @@
+# charger l’URL de la base depuis le fichier .env ;
+# créer le moteur de connexion SQL ;
+# préparer les sessions pour communiquer avec la base de données.
+
 import os
 
 from sqlalchemy import create_engine

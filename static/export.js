@@ -1,4 +1,14 @@
 // generation du fichier excel
+// récupération des  données affichées à l’écran (window.currentData)
+// création classeur avec plusieurs feuilles
+// trie les joueurs :
+//                      par classement
+//                      par disponibilités
+//                      par indisponibilités
+//                      par créneau
+//                      par absents
+// formate les statuts (disponible, indisponible)
+// télécharge automatiquement le fichier .xlsx.
 
 function exportExcel() {
 

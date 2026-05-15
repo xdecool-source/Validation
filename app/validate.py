@@ -1,3 +1,10 @@
+# Démarre le serveur FastAPI
+# Initialise la base de données au lancement
+# Charge les routes API (admin, import joueurs, etc.)
+# Affiche les pages HTML (admin, utilisateur)
+# Renseigne les fichiers statiques (CSS, JS, service worker)
+# Prépare les templates Jinja2 pour le frontend : java script
+
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
@@ -24,12 +31,11 @@ if not SECRET_KEY:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print(" Vérification / création des tables...")
     
+    print(" Vérification / création des tables...")
     # Pour reveiller la base avant le premier insert 
     with engine.connect() as conn:
         conn.execute(text("SELECT 1"))
-        
     Base.metadata.create_all(bind=engine)
     init_match_days()
     init_match_slots() 

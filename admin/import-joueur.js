@@ -1,4 +1,13 @@
 // Import des joueurs a partir du fichier export.xlsx de Spid (FFTT)
+// Connexion Admin avec le code admin
+// Stock les tokens dans le navigateur
+// Envoie le fichier Excel SPID au backend
+// Appel la fonction route :  /admin/import-joueur
+// Affiche du résultat de l’import :
+//                              joueurs ajoutés
+//                              joueurs mis à jour
+//                              erreurs éventuelles 
+//  Deconnexion de l'admin
 
 function setStatus(msg) {
 
