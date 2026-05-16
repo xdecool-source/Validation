@@ -1,9 +1,8 @@
 # Gestion connexion a l'application Validation
-# gérer la connexion avec tokens/JWT et rôles admin/utilisateur ;
-# enregistrer les disponibilités des joueurs pour les matchs ;
-# sécuriser l’accès avec codes PIN et limite de tentatives ;
-# stocker les données en base SQL ;
-# exporter les disponibilités en fichier Excel.
+# Gère la connexion avec tokens/JWT et rôles admin/utilisateur ;
+# Enregistre les disponibilités des joueurs pour les matchs ;
+# Sécurise l’accès avec codes PIN et limite de tentatives ;
+# Enregistre les données en base SQL ;
 # attempts[ip]["count"] > 5  nombre de tentative avant blocage donc 6
 # attempts[ip]["time"] < 60 durée de blocage 60 secondes 
 
@@ -312,6 +311,3 @@ def add_availability(
             })
 
     return {"message": "Validées"}
-
-
-# Export Excel

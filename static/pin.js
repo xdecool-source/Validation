@@ -24,7 +24,7 @@ window.addEventListener("DOMContentLoaded", () => {
         pinInput.value =
             pinInput.value =
                 pinInput.value
-                    .slice(0, 20);
+                    .slice(0, 6);
 
         if (pinInput.value.length !== 6) return;
         checkingPin = true;
