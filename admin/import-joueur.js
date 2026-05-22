@@ -37,9 +37,10 @@ async function upload() {
     }
     const fileInput = document.getElementById("fileInput");
     if (!fileInput.files.length) {
-        setStatus("Aucun fichier");
+        setStatus("Aucun fichier selectionné");
         return;
     }
+    // console.log(fileInput.files[0]);
     const formData = new FormData();
     formData.append("file", fileInput.files[0]);
 
@@ -51,40 +52,28 @@ async function upload() {
         body: formData
     });
 
-    if (res.status === 401) {
-        await refreshToken();
-        token = localStorage.getItem("access");
-        res = await fetch("/admin/import-joueur", {
-            method: "POST",
-            headers: {
-                "Authorization": "Bearer " + token
-            },
-            body: formData
-        });
-    }
-
+    const raw = await res.text();
+    // console.log(raw);
     let data;
-
     try {
-        data = await res.json();
+        data = JSON.parse(raw);
     } catch (e) {
-        const text = await res.text();
-        // console.log("RAW RESPONSE:", text);
-        setStatus("Erreur serveur");
+        setStatus("Réponse serveur invalide");
         return;
     }
-    // console.log(data);
+
     if (data.message) {
+
         if (data.inserted === 0) {
-            setStatus(`Aucun nouveau joueur toujours (${data.updated} joueurs)`);
+            setStatus(`Base adhérents synchronisée (${data.updated} joueurs )`);
         } else {
-            setStatus(`${data.nb_total} joueurs (${data.inserted} ajoutés, ${data.updated} mis à jour)`);
+            setStatus(`${data.nb_total} joueurs (${data.inserted} ajoutés, sur ${data.updated} joueurs)`);
         }
-        fileInput.value = "";
+        // fileInput.value = "";
     } else if (data.error) {
-        setStatus("Error" + data.error);
+        setStatus("Error " + data.error);
     } else {
-        setStatus("il faut se reconnecter");
+        setStatus("Il faut se reconnecter");
     }
 }
 

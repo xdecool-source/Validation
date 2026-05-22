@@ -27,15 +27,15 @@ body {
 .card {
     width: 100%;
     max-width: 320px;
-
-    min-height: 460px;
-
+    height: 460px; /* hauteur fixe */
+    
     background: rgba(255, 255, 255, 0.95);
     border-radius: 22px;
     padding: 16px;
 
     display: flex;
     flex-direction: column;
+    gap: 10px;
 
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 
@@ -149,25 +149,11 @@ select {
 /* Slots */
 
 .slot-row {
-    display: grid;
-    grid-template-columns: 1fr 42px;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 6px 0;
+    padding: 6px 4px;
 }
-
-#matchDaysContainer {
-    width: 100%;
-}
-
-.slot-row label {
-    margin: 0;
-    width: 100%;
-    display: block;
-}
-
-
 
 /* Switch */
 
@@ -175,7 +161,6 @@ select {
     appearance: none;
     width: 42px;
     height: 24px;
-    flex-shrink: 0;
     background: #ccc;
     border-radius: 50px;
     position: relative;
@@ -224,15 +209,9 @@ button:hover {
 #form {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-}
-
-#matchDaysContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
+    height: 100%;
+    justify-content: space-between;
+    }
 
 .text-center {
     margin-top: auto;
@@ -246,19 +225,6 @@ button:hover {
 }
 
 /* Pin */
-
-.pin-input {
-    width: 110px;
-    height: 32px;
-
-    border-radius: 8px;
-    border: 1px solid #ccc;
-
-    text-align: center;
-    letter-spacing: 6px;
-    font-size: 14px;
-}
-
 
 #pinContainer {
     display: flex;

@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Admin Panel</title>
+    <title>Admin Panel TT Thuirinois</title>
     <link rel="stylesheet" href="/static-admin/import-joueur.css">
 </head>
 <body>
 
 <div class="card">
     <h2>Admin Panel TT Thuirinois</h2>
+    <h2>Import Des Adhérents SPID</h2>
+   
     <button class="login" onclick="login()">Connexion</button>
-    <input type="file" id="fileInput">
-    <button class="upload" onclick="upload()">Importer joueurs</button>
+    <input type="file" id="fileInput" name="file">
+    <button class="upload" onclick="upload()">Chargement des Adhérents</button>
     <button class="logout" onclick="logout()">Déconnexion</button>
     <div class="status" id="status"></div>
 </div>

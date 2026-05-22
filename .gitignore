@@ -1,5 +1,8 @@
-A_Info/
-__pycache__/
 *.pyc
 .env
+Procfile
+A_Info/
+__pycache__/
 venv/
+DB/
+Database/
