@@ -52,8 +52,6 @@ async function loadDays() {
         select.appendChild(opt);
     });
 
-    
-
     if (closestDayId !== null) {
         select.value = closestDayId;
     }

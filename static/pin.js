@@ -17,7 +17,6 @@ window.addEventListener("DOMContentLoaded", () => {
         pinInput.click();
     }, 300);
 
-
     // Saisie PIN
     pinInput.addEventListener("input", async () => {
         if (checkingPin) return;

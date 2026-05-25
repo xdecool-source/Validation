@@ -87,7 +87,6 @@ async def import_joueur(
                 else:
                     updated += 1
                     
-       
         return {
             "message": "Import réussi",
             "nb_total": len(players),

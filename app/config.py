@@ -3,7 +3,8 @@
 # http://127.0.0.1:8000/admin-dispo
 # http://127.0.0.1:8000/?admin=valeur_de_admin_token
 # http://127.0.0.1:8000/export-excel/1 
-# 1 = J1 journée 1 2026-09-20
+# 1 = J1 journée 1 
+# 2 = J2 journée 2
 
 from dotenv import load_dotenv
 import os

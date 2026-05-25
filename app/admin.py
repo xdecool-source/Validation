@@ -180,7 +180,6 @@ def get_player(license: str, role: str = Depends(verify_token)):
             ]
         }
 
-
 @router.get("/dispos/{match_day_id}")
 def get_dispos(
     match_day_id: int,

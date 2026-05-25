@@ -273,4 +273,3 @@ function autoSizeColumns(data) {
 
 //  Global
 window.exportExcel = exportExcel;
-
