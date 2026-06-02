@@ -71,8 +71,16 @@ def auth_player(license: str, user=Depends(verify_token)):
     return {
         "ok": True,
         "token": create_token("user", license)
-    }   
-     
+    }  
+    
+# Reveil de la base 
+ 
+@router.get("/ping")
+def ping():
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+    return {"ok": True}
+  
 # Login
 
 @router.get("/check-access")

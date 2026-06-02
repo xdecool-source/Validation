@@ -25,7 +25,14 @@ const SLOTS = [
 async function login(code) {
     // console.log("Token:", token);
     // console.log("Login Appélé");
-    const payload = JSON.parse(atob(token.split(".")[1]));
+    // Appel reveil base 
+    try {
+        await fetch("/ping");
+    } catch (e) {
+        console.log("Ping impossible", e);
+    }
+
+    // const payload = JSON.parse(atob(token.split(".")[1]));
     // console.log("Chargement:", payload);
     const license = document.getElementById("license").value.trim();
     if (!license) {
@@ -331,7 +338,8 @@ async function loadData() {
 // Init
 
 document.addEventListener("DOMContentLoaded", async () => {
-    document.body.style.visibility = "hidden";
+        
+    document.body.style.visibility = "hidden"
      checkAdmin();
 
     // initialise la zone de saisie licence
@@ -435,6 +443,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     match_day_id: selectedDay,
                     slots: slots
                 };
+                // console.time("save");
                 const response = await fetch("/availability", {
                     method: "POST",
                     headers: {
@@ -443,6 +452,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     },
                     body: JSON.stringify(data)
                 });
+                
+                // console.timeEnd("save");
+
                 const result = await response.json();
                 document.getElementById("result").innerHTML = `
                     <div class="result-success">
