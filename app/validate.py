@@ -32,7 +32,9 @@ if not SECRET_KEY:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     
-    print(" Vérification / création des tables...")
+    print("")
+    print(" Validation Planning : Vérification / création des tables...")
+    print("")
     # Pour reveiller la base avant le premier insert 
     try:
         with engine.begin() as conn:
