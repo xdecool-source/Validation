@@ -1,9 +1,8 @@
-
 # http://127.0.0.1:8000
 # http://127.0.0.1:8000/admin-dispo
 # http://127.0.0.1:8000/?admin=valeur_de_admin_token
 # 1 = J1 journée 1 
-# 2 = J2 journée 2
+# 2 = J2 journée 2 "2026-09-20"
 
 from dotenv import load_dotenv
 import os

@@ -233,7 +233,7 @@ function isLocked(day) {
     const matchDate = new Date(day.date + "T00:00:00");
     const limitDate = new Date(matchDate);
     //  Nombre de jours avant la date de championnat voir config.js
-    limitDate.setDate(limitDate.getDate() - Datelimite);
+    limitDate.setDate(limitDate.getDate() - DATE_LIMITE);
     //  heure fixe 14h
     limitDate.setHours(14, 0, 0, 0);
     return now >= limitDate;
@@ -247,7 +247,7 @@ function getClosureDate(day) {
     const matchDate = new Date(day.date + "T00:00:00");
     const limitDate = new Date(matchDate);
     //  Nombre de jours avant la date de championnat voir config.js : date de cloture 
-    limitDate.setDate(limitDate.getDate() - Datelimite);
+    limitDate.setDate(limitDate.getDate() - DATE_LIMITE);
     //  14h
     limitDate.setHours(14, 0, 0, 0);
     const d = String(limitDate.getDate()).padStart(2, "0");
@@ -274,6 +274,9 @@ function updateClosureInfo() {
 }
 
 // Chargement
+
+const Max_affiche_jour_valide = Number(document.body.dataset.maxAffiche);
+const DATE_LIMITE = Number(document.body.dataset.DATE_LIMITE);
 
 async function loadData() {
     try {

@@ -28,12 +28,14 @@ ADMIN_PIN = os.getenv("ADMIN_PIN")
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise Exception("SECRET_KEY non défini !")
+MAX_AFFICHE_JOUR_VALIDE = int(os.getenv("MAX_AFFICHE_JOUR_VALIDE"))
+DATE_LIMITE = int(os.getenv("DATE_LIMITE"))
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     
     print("")
-    print(" Validation Planning : Vérification / création des tables...")
+    print(" 🟢 Validation Planning : Vérification / création des tables...")
     print("")
     # Pour reveiller la base avant le premier insert 
     try:
@@ -64,21 +66,25 @@ def get_db():
     finally:
         db.close()
 
-#@app.get("/admin", response_class=HTMLResponse)
-#def admin_page(request: Request):
-#    return templates.TemplateResponse("admin.html", {"request": request})
-
 @app.get("/admin-dispo", response_class=HTMLResponse)
 def admin_dispos(request: Request):
     return templates.TemplateResponse("admin_dispo.html", {"request": request})
 
-@app.get("/", response_class=HTMLResponse)
-def home(request: Request):
-    return templates.TemplateResponse("user.html", {"request": request})
-
 @app.get("/admin/import-joueur")
 def admin_page():
     return FileResponse("admin/import-joueur.html")
+
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request):
+    return templates.TemplateResponse(
+        "user.html",
+        {
+            "request": request,
+            "max_affiche_jour_valide": MAX_AFFICHE_JOUR_VALIDE,
+            "date_limite": DATE_LIMITE,
+        },
+    )
+
 
 @app.get("/service-worker.js")
 def service_worker():
