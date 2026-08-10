@@ -27,43 +27,64 @@ async def import_joueur(
     file: UploadFile = File(...),
     role: str = Depends(verify_token)
  ):
-    # print("ROUTE IMPORT EXECUTÉE")
-    # print("ROLE VALUE:", role)
+    #print("ROUTE IMPORT EXECUTÉE")
+    #print("ROLE VALUE:", role)
     if role.get("role") != "admin":
         raise HTTPException(status_code=403)
-    # print(" FILENAME:", file.filename)
-    # print(" CONTENT TYPE:", file.content_type)
+        #print(" FILENAME:", file.filename)
+        #print(" CONTENT TYPE:", file.content_type)
     try:
         content = await file.read()
-        # print(" SIZE:", len(content))
+        #print(" SIZE:", len(content))
 
         df = pd.read_excel(io.BytesIO(content), sheet_name=0, dtype=str)
-        # print("EXCEL LU")
-        # print("COLUMNS:", df.columns.tolist())
-        # print("NB ROWS:", len(df))
+        #print("EXCEL LU")
+        #print("COLUMNS:", df.columns.tolist())
+        #print("NB ROWS:", len(df))
+        
+        df = pd.read_excel(io.BytesIO(content), sheet_name=0, dtype=str)
+
+        # Nettoyage des noms de colonnes
         df.columns = df.columns.str.strip()
+
         players = []
 
         for _, row in df.iterrows():
-            license_number = str(row.iloc[0]).strip()
-            last_name = str(row.iloc[2]).strip() if row.iloc[2] else ""
-            first_name = str(row.iloc[3]).strip() if row.iloc[3] else ""
-            points = row.iloc[15]
-            email = str(row.iloc[23]).strip() if row.iloc[23] else ""
 
-            if pd.isna(license_number) or pd.isna(last_name):
-                # print("SKIPPED")
+            license_number = str(row.get("N° licence", "")).strip()
+            last_name = str(row.get("Nom", "")).strip()
+            first_name = str(row.get("Prénom", "")).strip()
+            points = str(row.get("Points", "0")).strip()
+            certif = str(row.get("Type certificat médical", "")).strip()
+            type = str(row.get("Type", "")).strip()
+            validation = str(row.get("Validation", "")).strip()
+
+            # export2.xlsx ne contient pas la colonne Email
+            email = str(row.get("Email", "")).strip()
+
+            # Ignore les lignes incomplètes
+            if not license_number or not last_name:
                 continue
+
+            # Conversion des points
+            try:
+                ranking = int(float(points))
+            except (ValueError, TypeError):
+                ranking = 0
 
             players.append({
                 "license": license_number,
                 "name": f"{first_name} {last_name}".strip(),
-                "ranking": int(points) if points and str(points).isdigit() else 0,
+                "ranking": ranking,
+                "certif": certif,
+                "type": type,
+                "validation": validation,
                 "email": email
             })
+
         players.sort(key=lambda x: x["ranking"], reverse=True)
         
-        # print("AVANT INSERT:", len(players))
+        #print("AVANT INSERT:", len(players))
 
         inserted = 0
         updated = 0
@@ -71,8 +92,8 @@ async def import_joueur(
         with engine.begin() as conn:
             for p in players:
                 result = conn.execute(text("""
-                    INSERT INTO players (license, name, ranking, email)
-                    VALUES (:license, :name, :ranking, :email)
+                    INSERT INTO players (license, name, ranking, certif, type, validation, email)
+                    VALUES (:license, :name, :ranking, :certif, :type, :validation, :email)
                     ON CONFLICT (license)
                     DO UPDATE SET
                         name = EXCLUDED.name,
@@ -95,6 +116,6 @@ async def import_joueur(
         }
         
     except Exception as e:
-        # print("ERREUR IMPORT:", repr(e))
+        #print("ERREUR IMPORT:", repr(e))
         raise HTTPException(status_code=500, detail=str(e))
     

@@ -18,6 +18,9 @@ class Player(Base):
     ranking = Column(Integer, default=0, index=True)
     team = Column(String, nullable=True)
     email = Column(String, nullable=True)
+    certif = Column(String, nullable=True)
+    type = Column(String, nullable=True)
+    validation = Column(String, nullable=True)
     __table_args__ = (
         Index("idx_ranking_desc", ranking.desc()),
     )
