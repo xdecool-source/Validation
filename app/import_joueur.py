@@ -55,8 +55,8 @@ async def import_joueur(
             last_name = str(row.get("Nom", "")).strip()
             first_name = str(row.get("Prénom", "")).strip()
             points = str(row.get("Points", "0")).strip()
-            certif = str(row.get("Type certificat médical", "")).strip()
-            type = str(row.get("Type", "")).strip()
+            type_certif = str(row.get("Type certificat médical", "")).strip()
+            type_licence = str(row.get("Type", "")).strip()
             validation = str(row.get("Validation", "")).strip()
 
             # export2.xlsx ne contient pas la colonne Email
@@ -76,8 +76,8 @@ async def import_joueur(
                 "license": license_number,
                 "name": f"{first_name} {last_name}".strip(),
                 "ranking": ranking,
-                "certif": certif,
-                "type": type,
+                "type_certif": type_certif,
+                "type_licence": type_licence,
                 "validation": validation,
                 "email": email
             })
@@ -92,8 +92,8 @@ async def import_joueur(
         with engine.begin() as conn:
             for p in players:
                 result = conn.execute(text("""
-                    INSERT INTO players (license, name, ranking, certif, type, validation, email)
-                    VALUES (:license, :name, :ranking, :certif, :type, :validation, :email)
+                    INSERT INTO players (license, name, ranking, type_certif, type_licence, validation, email)
+                    VALUES (:license, :name, :ranking, :type_certif, :type_licence, :validation, :email)
                     ON CONFLICT (license)
                     DO UPDATE SET
                         name = EXCLUDED.name,
