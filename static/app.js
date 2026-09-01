@@ -1,3 +1,4 @@
+
 // Gestion des Absences pour le TT Thuirinois
 // Connecte les joueurs avec licence + PIN
 // Gére les tokens JWT côté navigateur
@@ -23,36 +24,25 @@ const SLOTS = [
 ];
 
 async function login(code) {
-    // console.log("Token:", token);
-    // console.log("Login Appélé");
-    // Appel reveil base 
+
     try {
         await fetch("/ping");
     } catch (e) {
         console.log("Ping impossible", e);
     }
-
-    // const payload = JSON.parse(atob(token.split(".")[1]));
-    // console.log("Chargement:", payload);
     const license = document.getElementById("license").value.trim();
     if (!license) {
         alert("Entre ta licence");
         return;
     }
-    // 1  vérifier le PIN
     const res = await fetch(`/check-access?code=${code}`);
     const data = await res.json();
-
     if (!data.ok) {
         alert("Code incorrect");
         return;
     }
-
-    // 2 récupérer token AVEC licence
     const authRes = await fetch(`/auth-player?license=${license}`);
     const authData = await authRes.json();
-    // console.log("Autorisation Status:", authRes.status);
-    // console.log("Autorisation Données:", authData);
     token = authData.token;
     localStorage.setItem("token", token);
     await loadData();
@@ -64,27 +54,38 @@ function checkAdmin() {
     if (!token) return;
     try {
         const payload = JSON.parse(atob(token.split(".")[1]));
+
         if (payload.role === "admin") {
             isAdmin = true;
+
             const importForm = document.getElementById("importForm");
-            if (importForm) importForm.style.display = "block";
-            const importMessage = document.getElementById("importMessage");
-            if (importMessage) importMessage.style.display = "block";
+            if (importForm) {
+                importForm.style.display = "block";
+            }
+
+            const importMessage =
+                document.getElementById("importMessage");
+
+            if (importMessage) {
+                importMessage.style.display = "block";
+            }
         }
     } catch (err) {
         console.error("Erreur token:", err);
     }
 }
 
-//  génération des slots
+// Génération des slots
 
 function getSlotsFromDate(dateStr) {
 
     const date = new Date(dateStr + "T00:00:00");
-    const day = date.getDay(); // 6 = samedi, 0 = dimanche
+    const day = date.getDay();
+    // 6 = samedi
     if (day === 6) {
         return [{ label: "samedi_aprem" }];
     }
+    // 0 = dimanche
     if (day === 0) {
         return [
             { label: "dimanche_matin" },
@@ -94,14 +95,15 @@ function getSlotsFromDate(dateStr) {
     return [];
 }
 
-//  render dynamique
-
+// Render dynamique
 function renderSlotsForSelectedDay() {
 
-    const container = document.getElementById("matchDaysContainer");
-    const daySelect = document.getElementById("match_day_id");
+    const container =
+        document.getElementById("matchDaysContainer");
+    const daySelect =
+        document.getElementById("match_day_id");
     if (!container || !daySelect) return;
-    const slots = SLOTS; 
+    const slots = SLOTS;
     container.innerHTML = "";
     slots.forEach(slot => {
         const wrapper = document.createElement("div");
@@ -118,21 +120,38 @@ function renderSlotsForSelectedDay() {
         container.appendChild(wrapper);
     });
 
-    document.querySelectorAll("#matchDaysContainer input[type=checkbox]").forEach(cb => {
-        cb.addEventListener("change", () => {
-            if (cb.dataset.label === "Absent" && cb.checked) {
-                document.querySelectorAll("#matchDaysContainer input[type=checkbox]")
-                    .forEach(other => {
-                        if (other !== cb) other.checked = false;
-                    });
-            } else {
-                const absent = document.querySelector(
-                    '#matchDaysContainer input[data-label="Absent"]'
-                );
-                if (absent) absent.checked = false;
-            }
+    document
+        .querySelectorAll(
+            "#matchDaysContainer input[type=checkbox]"
+        )
+        .forEach(cb => {
+            cb.addEventListener("change", () => {
+                if (
+                    cb.dataset.label === "Absent" &&
+                    cb.checked
+                ) {
+                    document
+                        .querySelectorAll(
+                            "#matchDaysContainer input[type=checkbox]"
+                        )
+                        .forEach(other => {
+                            if (other !== cb) {
+                                other.checked = false;
+                            }
+                        });
+                } else {
+                    const absent =
+                        document.querySelector(
+                            '#matchDaysContainer input[data-label="Absent"]'
+                        );
+
+                    if (absent) {
+                        absent.checked = false;
+                    }
+                }
+            });
         });
-    });
+
     setSlotsDisabled(!playerValid);
 }
 
@@ -140,10 +159,16 @@ function renderSlotsForSelectedDay() {
 
 function resetUI() {
 
-    const nameDiv = document.getElementById("player_name");
-    const infoDiv = document.getElementById("player_info");
-    if (nameDiv) nameDiv.textContent = "";
-    if (infoDiv) infoDiv.textContent = "";
+    const nameDiv =
+        document.getElementById("player_name");
+    const infoDiv =
+        document.getElementById("player_info");
+    if (nameDiv) {
+        nameDiv.textContent = "";
+    }
+    if (infoDiv) {
+        infoDiv.textContent = "";
+    }
     playerValid = false;
     window.currentAvailability = null;
     setSlotsDisabled(true);
@@ -152,482 +177,934 @@ function resetUI() {
 
 function clearResult() {
 
-    const result = document.getElementById("result");
-    if (result) result.innerHTML = "";
+    const result =
+        document.getElementById("result");
+    if (result) {
+        result.innerHTML = "";
+    }
 }
 
 async function safeFetch(url) {
 
-    const token = localStorage.getItem("token");
+    const token =
+        localStorage.getItem("token");
     if (!token) {
         alert("Tu dois te connecter");
-        return;
+        return null;
     }
     const res = await fetch(url, {
-        headers: { "Authorization": "Bearer " + token }
+        headers: {
+            "Authorization": "Bearer " + token
+        }
     });
+
     if (res.status === 403) {
         const data = await res.json();
-        const message = data.detail || "Accès refusé";
-        alert(message); // affiche "Token expiré"
+        const message =
+            data.detail || "Accès refusé";
+        alert(message);
         if (data.detail === "Token expiré") {
-            alert("Votre session a expiré. Merci de vous reconnecter.");
+            alert(
+                "Votre session a expiré. Merci de vous reconnecter."
+            );
             localStorage.removeItem("token");
             location.reload();
         }
-        return;
-}
-    if (!res.ok) throw new Error(`Erreur API: ${url}`);
+        return null;
+    }
+    if (!res.ok) {
+        throw new Error(`Erreur API: ${url}`);
+    }
     return res.json();
 }
 
-
 function setSlotsDisabled(disabled) {
 
-    const checkboxes = document.querySelectorAll("#matchDaysContainer input[type=checkbox]");
-    const absent = document.querySelector('#matchDaysContainer input[data-label="Absent"]');
+    const checkboxes =
+        document.querySelectorAll(
+            "#matchDaysContainer input[type=checkbox]"
+        );
     checkboxes.forEach(cb => {
         cb.disabled = disabled;
-        cb.parentElement.style.opacity = disabled ? "0.4" : "1";
+        cb.parentElement.style.opacity =
+            disabled ? "0.4" : "1";
     });
-   
- }
+}
 
 function resetSlots() {
 
-    document.querySelectorAll("#matchDaysContainer input[type=checkbox]")
-    .forEach(cb => cb.checked = false);
-    const absent = document.querySelector('#matchDaysContainer input[data-label="Absent"]');
-    if (absent) absent.checked = false;
+    document
+        .querySelectorAll(
+            "#matchDaysContainer input[type=checkbox]"
+        )
+        .forEach(cb => {
+            cb.checked = false;
+        });
 }
 
 function applySlots(slots) {
 
-    const checkboxes = document.querySelectorAll("#matchDaysContainer input[type=checkbox]");
-    const absent = document.querySelector('#matchDaysContainer input[data-label="Absent"]');
-
-    // reset
-    checkboxes.forEach(cb => cb.checked = false);
-    if (absent) absent.checked = false;
-    const isAbsent = slots.find(s => s.label === "Absent" && s.available);
+    const checkboxes =
+        document.querySelectorAll(
+            "#matchDaysContainer input[type=checkbox]"
+        );
+    const absent =
+        document.querySelector(
+            '#matchDaysContainer input[data-label="Absent"]'
+        );
+    // Reset
+    checkboxes.forEach(cb => {
+        cb.checked = false;
+    });
+    if (absent) {
+        absent.checked = false;
+    }
+    const isAbsent =
+        slots.find(
+            s =>
+                s.label === "Absent" &&
+                s.available
+        );
     if (isAbsent) {
-        if (absent) absent.checked = true;
+        if (absent) {
+            absent.checked = true;
+        }
         return;
     }
-
-    // sinon comportement normal
     slots.forEach(slot => {
-        const cb = Array.from(checkboxes)
-            .find(c => c.dataset.label === slot.label);
-
-        if (cb) cb.checked = slot.available;
+        const cb = Array
+            .from(checkboxes)
+            .find(
+                c =>
+                    c.dataset.label === slot.label
+            );
+        if (cb) {
+            cb.checked = slot.available;
+        }
     });
 }
 
-// fonction pour verrouillage
+// configuration
+const MAX_AFFICHE_JOUR_VALIDE = Number(
+    document.body.dataset.maxAffiche
+);
+const DATE_LIMITE = Number(
+    document.body.dataset.dateLimite
+);
+console.log(
+    "CONFIG :",
+    MAX_AFFICHE_JOUR_VALIDE,
+    DATE_LIMITE
+);
+console.log(
+    "DATE_LIMITE valide ?",
+    Number.isFinite(DATE_LIMITE)
+);
+
+// verrouillage
+
+function getClosureLimitDate(day) {
+
+    if (!day || !day.date) {
+        return null;
+    }
+    const matchDate =
+        new Date(day.date + "T00:00:00");
+    if (Number.isNaN(matchDate.getTime())) {
+        console.error(
+            "Date championnat invalide :",
+            day.date
+        );
+        return null;
+    }
+    if (!Number.isFinite(DATE_LIMITE)) {
+        console.error(
+            "DATE_LIMITE invalide :",
+            DATE_LIMITE
+        );
+        return null;
+    }
+    const limitDate =
+        new Date(matchDate);
+    limitDate.setDate(
+        limitDate.getDate() - DATE_LIMITE
+    );
+    // Clôture à 14h00
+    limitDate.setHours(
+        14,0,0,0
+    );
+    return limitDate;
+}
 
 function isLocked(day) {
 
-    if (!day.date) return false;
-    const now = new Date();
-    const matchDate = new Date(day.date + "T00:00:00");
-    const limitDate = new Date(matchDate);
-    //  Nombre de jours avant la date de championnat voir config.js
-    limitDate.setDate(limitDate.getDate() - DATE_LIMITE);
-    //  heure fixe 14h
-    limitDate.setHours(14, 0, 0, 0);
-    return now >= limitDate;
-}
+    const limitDate =
+        getClosureLimitDate(day);
 
-// Affichage du jour de cloture 
+    if (!limitDate) {
+        return false;
+    }
+    return new Date() >= limitDate;
+}
 
 function getClosureDate(day) {
 
-    if (!day.date) return "";
-    const matchDate = new Date(day.date + "T00:00:00");
-    const limitDate = new Date(matchDate);
-    //  Nombre de jours avant la date de championnat voir config.js : date de cloture 
-    limitDate.setDate(limitDate.getDate() - DATE_LIMITE);
-    //  14h
-    limitDate.setHours(14, 0, 0, 0);
-    const d = String(limitDate.getDate()).padStart(2, "0");
-    const m = String(limitDate.getMonth() + 1).padStart(2, "0");
-    return ` ⏱${d}/${m} 
-    `;
+    const limitDate =
+        getClosureLimitDate(day);
+
+    if (!limitDate) {
+        return "";
+    }
+    const d =
+        String(limitDate.getDate())
+            .padStart(2, "0");
+    const m =
+        String(limitDate.getMonth() + 1)
+            .padStart(2, "0");
+    return `${d}/${m}`;
 }
 
 function updateClosureInfo() {
 
-    const dayId = document.getElementById("match_day_id").value;
-    const day = matchDays.find(d => d.id == dayId);
-    if (!day) return;
-    const closureDiv = document.getElementById("closureInfo");
-    if (!closureDiv) return;
-    const text = getClosureDate(day);
-    const parts = text.split("⏱");
-    const locked = isLocked(day);
+    const daySelect =
+        document.getElementById(
+            "match_day_id"
+        );
+    const closureDiv =
+        document.getElementById(
+            "closureInfo"
+        );
+    if (!daySelect || !closureDiv) {
+        return;
+    }
+    const dayId = daySelect.value;
+    const day =
+        matchDays.find(
+            d => String(d.id) === String(dayId)
+        );
+    if (!day) {
+        closureDiv.innerHTML = "";
+        return;
+    }
+    const closureDate =
+        getClosureDate(day);
+
+    if (!closureDate) {
+        closureDiv.innerHTML = "";
+        return;
+    }
+    const locked =
+        isLocked(day);
     closureDiv.innerHTML = `
-    <div class="${locked ? "closure-locked" : "closure-open"}">
-        On clôture le ${parts[1]} à 14H00
-    </div>
+        <div class="${
+            locked
+                ? "closure-locked"
+                : "closure-open"
+        }">
+            On clôture le ${closureDate} à 14H00
+        </div>
     `;
 }
 
-// Chargement
-
-const Max_affiche_jour_valide = Number(document.body.dataset.maxAffiche);
-const DATE_LIMITE = Number(document.body.dataset.DATE_LIMITE);
+// chargement des journées
 
 async function loadData() {
+
     try {
-        matchDays = await safeFetch("/match-days");
-        // console.log("Jours de match  Backend:", matchDays); 
-        const daySelect = document.getElementById("match_day_id");
-
-        if (daySelect) {
-            daySelect.innerHTML = "";
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const futureDays = matchDays.filter(day => {
-                if (!day.date) return false;
-                const d = new Date(day.date + "T00:00:00");
-                return d >= today;
-            });
-            futureDays.sort((a, b) => new Date(a.date) - new Date(b.date));
-            let nextDays = [];
-            //  1. ajouter toutes les journées verrouillées
-            matchDays.forEach(day => {
-                if (isLocked(day)) {
-                    nextDays.push(day);
-                }
-            });
-            //  2. ajouter les deux premières journées NON verrouillée
-            let added = 0;
-
-            for (let i = 0; i < futureDays.length; i++) {
-                const day = futureDays[i];
-
-                if (!isLocked(day)) {
-                    nextDays.push(day);
-                    added++;
-
-                    if (added >= Max_affiche_jour_valide) break;
-                }
-            }
-
-            nextDays.forEach(day => {
-                const option = document.createElement("option");
-                option.value = day.id;
-                const formattedDate = day.date
-                    ? day.date.split("-").reverse().join("/")
-                    : "";
-                // option.text = `${day.code} - ${formattedDate}`;
-                option.text = `${day.code} - ${formattedDate}`;
-                //  verrou mercredi 14h
-                if (isLocked(day)) {
-                    option.disabled = true;
-                    option.text += " (verrouillé)";
-                }
-                daySelect.appendChild(option);
-            });
-            renderSlotsForSelectedDay();
-        }
-
-    } catch (err) {
-        console.error(err);
-    }
-}
-
-// Init
-
-document.addEventListener("DOMContentLoaded", async () => {
-        
-    document.body.style.visibility = "hidden"
-     checkAdmin();
-
-    // initialise la zone de saisie licence
-    const licenseInput = document.getElementById("license");
-
-    // reset licence
-    if (licenseInput) {
-        licenseInput.value = "";
-    }
-
-    // reset affichage joueur
-    document.getElementById("player_name").textContent = "";
-    document.getElementById("player_info").textContent = "";
-
-    // IMPORTANT
-    if (localStorage.getItem("token")) {
-        await loadData();
-    }
-
-    document.body.style.visibility = "visible";
-
-    updateClosureInfo();
-
-    if (licenseInput) {
-        licenseInput.focus();
-    }
-
-    const daySelect = document.getElementById("match_day_id");
-    if (daySelect) {
-        daySelect.addEventListener("change", () => {
-            renderSlotsForSelectedDay();
-
-            if (window.currentAvailability) {
-                updateAvailabilityUI();
-            }
-            updateClosureInfo(); 
-        });
-    }
-    const form = document.getElementById("form");
-    if (form) {
-        form.addEventListener("input", clearResult);
-        form.addEventListener("submit", async function (e) {
-            e.preventDefault();
-            if (!playerValid) {
-                alert("Licence invalide");
-                return;
-            }
-            const checkboxes = Array.from(
-                document.querySelectorAll("#matchDaysContainer input[type=checkbox]")
-            );
-            const absentChecked = checkboxes.find(
-                cb => cb.dataset.label === "Absent" && cb.checked
-            );
-            // construire les slots
-            const slots = checkboxes.map(cb => {
-                if (absentChecked && cb.dataset.label !== "Absent") {
-                    return {
-                        label: cb.dataset.label,
-                        available: false
-                    };
-                }
-                return {
-                    label: cb.dataset.label,
-                    available: cb.checked
-                };
-            });
-
-            // VALIDATION RÉELLE
-            const hasRealSelection = slots.some(s => s.available === true);
-
-            if (!hasRealSelection) {
-                alert("Merci de sélectionner au moins un créneau ou 'Absent'");
-                return;
-            }
-
-            try {
-                const selectedDay = parseInt(
-                    document.getElementById("match_day_id").value
-                );
-            const checkboxes = Array.from(
-                document.querySelectorAll("#matchDaysContainer input[type=checkbox]")
-            );
-            const absentChecked = checkboxes.find(
-                cb => cb.dataset.label === "Absent" && cb.checked
-            );
-            const slots = checkboxes.map(cb => {
-                if (absentChecked && cb.dataset.label !== "Absent") {
-                    return {
-                        label: cb.dataset.label,
-                        available: false
-                    };
-                }
-                return {
-                    label: cb.dataset.label,
-                    available: cb.checked
-                };
-            });
-
-                const data = {
-                    license: document.getElementById("license").value.trim(),
-                    match_day_id: selectedDay,
-                    slots: slots
-                };
-                // console.time("save");
-                const response = await fetch("/availability", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${localStorage.getItem("token")}`
-                    },
-                    body: JSON.stringify(data)
-                });
-                
-                // console.timeEnd("save");
-
-                const result = await response.json();
-                document.getElementById("result").innerHTML = `
-                    <div class="result-success">
-                        ✔ ${result.success || "Enregistré"}
-                    </div>
-                `;
-            } catch (err) {}
-        });
-    }
-
-    // Licence 
-
-    // const licenseInput = document.getElementById("license");
-    if (licenseInput) {
-        let timeout;
-        licenseInput.addEventListener("focus", resetField);
-        licenseInput.addEventListener("click", resetField);
-
-        function resetField() {
-            licenseInput.value = "";
-            resetSlots();
-            setSlotsDisabled(true);
-            // reset du libelle enregistré ou etc...
-            clearResult(); 
-            document.getElementById("player_name").textContent = "";
-            document.getElementById("player_info").textContent = "";
-            document.getElementById("player_name").classList.remove("show");
-            document.getElementById("player_info").classList.remove("show");
-            window.currentAvailability = null;
-            playerValid = false;
-        }
-
-        licenseInput.addEventListener("input", () => {
-        clearTimeout(timeout);
-
-        timeout = setTimeout(async () => {
-        const license = licenseInput.value.trim();
-        if (!/^[0-9]{6,}$/.test(license)) {
-            playerValid = false;
+        const data =
+            await safeFetch("/match-days");
+        if (!data) {
             return;
         }
+        matchDays = data;
+        const daySelect =
+            document.getElementById(
+                "match_day_id"
+            );
+        if (!daySelect) {
+            return;
+        }
+        daySelect.innerHTML = "";
+        const today =
+            new Date();
+        today.setHours(
+            0,0,0,0
+        );
+        const futureDays =
+            matchDays
+                .filter(day => {
+                    if (!day.date) {
+                        return false;
+                    }
+                    const date =
+                        new Date(
+                            day.date +
+                            "T00:00:00"
+                        );
 
-        resetSlots();
-        setSlotsDisabled(true);
-        window.currentAvailability = null;
+                    return date >= today;
+                })
+                .sort(
+                    (a, b) =>
+                        new Date(a.date) -
+                        new Date(b.date)
+                );
 
-        try {
-            //console.log("=== START FLOW ===");
-            // 1. récupérer token PIN (obligatoire)
-            const pinToken = localStorage.getItem("token");
-
-            if (!pinToken) {
-                alert("Session perdue (PIN)");
-                location.reload();
-                return;
+        const nextDays = [];
+        
+        // Journées verrouillées
+        matchDays.forEach(day => {
+            if (isLocked(day)) {
+                nextDays.push(day);
             }
-            // console.log("PIN TOKEN:", pinToken);
-            // 2. demander token joueur
-            const authRes = await fetch(`/auth-player?license=${license}`, {
-                headers: {
-                    Authorization: "Bearer " + pinToken
+        });
+        // Nombre de journées ouvertes
+        let added = 0;
+        for (
+            let i = 0;
+            i < futureDays.length;
+            i++
+        ) {
+            const day =
+                futureDays[i];
+            if (!isLocked(day)) {
+                // Évite les doublons
+                if (
+                    !nextDays.some(
+                        d => d.id === day.id
+                    )
+                ) {
+                    nextDays.push(day);
+                    added++;
                 }
-            });
 
-            // console.log("Autorisation Statut:", authRes.status);
-
-            if (!authRes.ok) {
-                const err = await authRes.json();
-                // console.log("AUTH ERROR:", err);
-
-                // document.getElementById("player_info").textContent = "❌ Xavier Licence inconnue";
-                document.getElementById("player_info").textContent = "❌ Veuillez vous reconnecter";
-                document.getElementById("player_info").classList.add("show");
-                playerValid = false;
-                alert("Veuillez vous reconnecter ou Absence de joueur");
-                return;
-            }
-
-            const authData = await authRes.json();
-            const playerToken = authData.token;
-
-            if (!playerToken) {
-                // console.log("Pas de token joueur");
-                return;
-            }
-
-            // console.log("Token joueur:", playerToken);
-            // IMPORTANT : on remplace le token
-            localStorage.setItem("token", playerToken);
-
-            // 3. appeler player avec BON token
-            const res = await fetch(`/player/${license}`, {
-                headers: {
-                    Authorization: "Bearer " + playerToken
+                if (
+                    added >=
+                    MAX_AFFICHE_JOUR_VALIDE
+                ) {
+                    break;
                 }
-            });
-
-            // console.log("Statut joueur:", res.status);
-            if (!res.ok) {
-                // console.log("Erreur Joueur");
-                playerValid = false;
-                return;
             }
-            const data = await res.json();
-            // console.log("Donnée joueur:", data);
-            const nameDiv = document.getElementById("player_name");
-            const infoDiv = document.getElementById("player_info");
-            if (!data.name) {
-                infoDiv.textContent = "Licence inconnue";
-                infoDiv.classList.add("show");
-                playerValid = false;
-                return;
-            }
-
-            // Ok
-            nameDiv.textContent = data.name;
-            nameDiv.classList.add("show");
-
-            playerValid = true;
-
-            renderSlotsForSelectedDay();
-            setSlotsDisabled(false);
-
-            // affichage
-            setTimeout(() => {
-                if (data.availability?.length > 0) {
-                    infoDiv.textContent = "✔ Voici vos disponibilités";
-                    infoDiv.classList.add("show");
-
-                    window.currentAvailability = data.availability;
-                    updateAvailabilityUI();
-                } else {
-                    infoDiv.textContent = "✔ Aucune saisie";
-                    infoDiv.classList.add("show");
-                }
-            }, 50);
-
-        } catch (err) {
-            console.error("ERROR:", err);
         }
 
-    }, 300);
-});
+        nextDays.forEach(day => {
+            const option =
+                document.createElement(
+                    "option"
+                );
+            option.value =
+                day.id;
+            const formattedDate =
+                day.date
+                    ? day.date
+                        .split("-")
+                        .reverse()
+                        .join("/")
+                    : "";
+            option.text =
+                `${day.code} - ${formattedDate}`;
 
+            if (isLocked(day)) {
+                option.disabled = true;
+
+                option.text +=
+                    " (verrouillé)";
+            }
+            daySelect.appendChild(
+                option
+            );
+        });
+        renderSlotsForSelectedDay();
+        updateClosureInfo();
+    } catch (err) {
+        console.error(
+            "Erreur chargement :",
+            err
+        );
+    }
 }
- });
+
+
+// initialisation
+
+document.addEventListener(
+
+    "DOMContentLoaded",
+    async () => {
+        document.body.style.visibility =
+            "hidden";
+        checkAdmin();
+        const licenseInput =
+            document.getElementById(
+                "license"
+            );
+        if (licenseInput) {
+            licenseInput.value = "";
+        }
+        const playerName =
+            document.getElementById(
+                "player_name"
+            );
+        const playerInfo =
+            document.getElementById(
+                "player_info"
+            );
+        if (playerName) {
+            playerName.textContent = "";
+        }
+        if (playerInfo) {
+            playerInfo.textContent = "";
+        }
+        if (
+            localStorage.getItem("token")
+        ) {
+            await loadData();
+        }
+        document.body.style.visibility =
+            "visible";
+
+        if (licenseInput) {
+            licenseInput.focus();
+        }
+        const daySelect =
+            document.getElementById(
+                "match_day_id"
+            );
+        if (daySelect) {
+            daySelect.addEventListener(
+                "change",
+                () => {
+                    renderSlotsForSelectedDay();
+                    if (
+                        window.currentAvailability
+                    ) {
+                        updateAvailabilityUI();
+                    }
+                    updateClosureInfo();
+                }
+            );
+        }
+
+        const form =
+            document.getElementById(
+                "form"
+            );
+        if (form) {
+            form.addEventListener(
+                "input",
+                clearResult
+            );
+            form.addEventListener(
+                "submit",
+                async function (e) {
+                    e.preventDefault();
+                    if (!playerValid) {
+                        alert(
+                            "Licence invalide"
+                        );
+                        return;
+                    }
+                    const selectedDay =
+                        parseInt(
+                            document
+                                .getElementById(
+                                    "match_day_id"
+                                )
+                                .value,
+                            10
+                        );
+
+                    if (
+                        Number.isNaN(
+                            selectedDay
+                        )
+                    ) {
+                        alert(
+                            "Merci de sélectionner une journée"
+                        );
+
+                        return;
+                    }
+                    // Récupération des cases
+                    const checkboxes =
+                        Array.from(
+                            document.querySelectorAll(
+                                "#matchDaysContainer input[type=checkbox]"
+                            )
+                        );
+
+                    const absentChecked =
+                        checkboxes.find(
+                            cb =>
+                                cb.dataset.label ===
+                                    "Absent" &&
+                                cb.checked
+                        );
+
+                    // Construction des slots
+                    const slots =
+                        checkboxes.map(
+                            cb => {
+                                if (
+                                    absentChecked &&
+                                    cb.dataset.label !==
+                                        "Absent"
+                                ) {
+                                    return {
+                                        label:
+                                            cb.dataset.label,
+                                        available:
+                                            false
+                                    };
+                                }
+
+                                return {
+                                    label:
+                                        cb.dataset.label,
+                                    available:
+                                        cb.checked
+                                };
+                            }
+                        );
+
+                    // Vérification :
+                    // au moins une disponibilité
+                    const hasRealSelection =
+                        slots.some(
+                            slot =>
+                                slot.available ===
+                                true
+                        );
+
+                    if (
+                        !hasRealSelection
+                    ) {
+                        alert(
+                            "Merci de sélectionner au moins un créneau ou 'Absent'"
+                        );
+                        return;
+                    }
+                    try {
+                        const data = {
+                            license:
+                                document
+                                    .getElementById(
+                                        "license"
+                                    )
+                                    .value
+                                    .trim(),
+
+                            match_day_id:
+                                selectedDay,
+
+                            slots:
+                                slots
+                        };
+                        const response =
+                            await fetch(
+                                "/availability",
+                                {
+                                    method:
+                                        "POST",
+
+                                    headers: {
+                                        "Content-Type":
+                                            "application/json",
+                                        "Authorization":
+                                            `Bearer ${
+                                                localStorage.getItem(
+                                                    "token"
+                                                )
+                                            }`
+                                    },
+
+                                    body:
+                                        JSON.stringify(
+                                            data
+                                        )
+                                }
+                            );
+
+                        const result =
+                            await response.json();
+
+                        if (
+                            !response.ok
+                        ) {
+                            throw new Error(
+                                result.detail ||
+                                "Erreur d'enregistrement"
+                            );
+                        }
+                        document
+                            .getElementById(
+                                "result"
+                            )
+                            .innerHTML = `
+                                <div class="result-success">
+                                    ✔ ${
+                                        result.success ||
+                                        "Enregistré"
+                                    }
+                                </div>
+                            `;
+
+                    } catch (err) {
+                        console.error(
+                            "Erreur enregistrement :",
+                            err
+                        );
+                        document
+                            .getElementById(
+                                "result"
+                            )
+                            .innerHTML = `
+                                <div class="result-error">
+                                    ❌ ${
+                                        err.message ||
+                                        "Erreur lors de l'enregistrement"
+                                    }
+                                </div>
+                            `;
+                    }
+                }
+            );
+        }
+
+        // gestion de la licence
+
+        if (licenseInput) {
+            let timeout;
+            licenseInput.addEventListener(
+                "focus",
+                resetField
+            );
+            licenseInput.addEventListener(
+                "click",
+                resetField
+            );
+
+            function resetField() {
+
+                licenseInput.value = "";
+                resetSlots();
+                setSlotsDisabled(
+                    true
+                );
+                clearResult();
+                const nameDiv =
+                    document.getElementById(
+                        "player_name"
+                    );
+                const infoDiv =
+                    document.getElementById(
+                        "player_info"
+                    );
+                if (nameDiv) {
+                    nameDiv.textContent =
+                        "";
+
+                    nameDiv.classList.remove(
+                        "show"
+                    );
+                }
+                if (infoDiv) {
+                    infoDiv.textContent =
+                        "";
+
+                    infoDiv.classList.remove(
+                        "show"
+                    );
+                }
+                window.currentAvailability =
+                    null;
+
+                playerValid = false;
+            }
+            licenseInput.addEventListener(
+                "input",
+                () => {
+                    clearTimeout(
+                        timeout
+                    );
+                    timeout =
+                        setTimeout(
+                            async () => {
+                                const license =
+                                    licenseInput
+                                        .value
+                                        .trim();
+
+                                if (
+                                    !/^[0-9]{6,}$/
+                                        .test(
+                                            license
+                                        )
+                                ) {
+                                    playerValid =
+                                        false;
+
+                                    return;
+                                }
+                                resetSlots();
+                                setSlotsDisabled(
+                                    true
+                                );
+                                window.currentAvailability =
+                                    null;
+                                try {
+                                    // 1. Token PIN
+                                    const pinToken =
+                                        localStorage.getItem(
+                                            "token"
+                                        );
+                                    if (
+                                        !pinToken
+                                    ) {
+                                        alert(
+                                            "Session perdue (PIN)"
+                                        );
+                                        location.reload();
+                                        return;
+                                    }
+
+                                    // 2. Authentification joueur
+                                    const authRes =
+                                        await fetch(
+                                            `/auth-player?license=${license}`,
+                                            {
+                                                headers: {
+                                                    Authorization:
+                                                        "Bearer " +
+                                                        pinToken
+                                                }
+                                            }
+                                        );
+
+                                    if (
+                                        !authRes.ok
+                                    ) {
+                                        const err =
+                                            await authRes.json();
+
+                                        console.error(
+                                            "AUTH ERROR:",
+                                            err
+                                        );
+                                        const infoDiv =
+                                            document.getElementById(
+                                                "player_info"
+                                            );
+                                        if (
+                                            infoDiv
+                                        ) {
+                                            infoDiv.textContent =
+                                                "❌ Veuillez vous reconnecter";
+                                            infoDiv.classList.add(
+                                                "show"
+                                            );
+                                        }
+
+                                        playerValid =
+                                            false;
+                                        alert(
+                                            "Veuillez vous reconnecter ou Absence de joueur"
+                                        );
+
+                                        return;
+                                    }
+
+                                    const authData =
+                                        await authRes.json();
+                                    const playerToken =
+                                        authData.token;
+                                    if (
+                                        !playerToken
+                                    ) {
+                                        playerValid =
+                                            false;
+                                        return;
+                                    }
+
+                                    // Le token joueur remplace
+                                    // le token précédent
+                                    localStorage.setItem(
+                                        "token",
+                                        playerToken
+                                    );
+
+                                    // 3. Récupération joueur
+                                    const res =
+                                        await fetch(
+                                            `/player/${license}`,
+                                            {
+                                                headers: {
+                                                    Authorization:
+                                                        "Bearer " +
+                                                        playerToken
+                                                }
+                                            }
+                                        );
+
+                                    if (
+                                        !res.ok
+                                    ) {
+                                        playerValid =
+                                            false;
+                                        return;
+                                    }
+
+                                    const data =
+                                        await res.json();
+                                    const nameDiv =
+                                        document.getElementById(
+                                            "player_name"
+                                        );
+
+                                    const infoDiv =
+                                        document.getElementById(
+                                            "player_info"
+                                        );
+                                    if (
+                                        !data.name
+                                    ) {
+                                        if (
+                                            infoDiv
+                                        ) {
+                                            infoDiv.textContent =
+                                                "Licence inconnue";
+
+                                            infoDiv.classList.add(
+                                                "show"
+                                            );
+                                        }
+
+                                        playerValid =
+                                            false;
+                                        return;
+                                    }
+
+                                    // Joueur valide
+                                    if (
+                                        nameDiv
+                                    ) {
+                                        nameDiv.textContent =
+                                            data.name;
+                                        nameDiv.classList.add(
+                                            "show"
+                                        );
+                                    }
+
+                                    playerValid =
+                                        true;
+                                    renderSlotsForSelectedDay();
+                                    setSlotsDisabled(
+                                        false
+                                    );
+                                    setTimeout(
+                                        () => {
+                                            if (
+                                                data.availability
+                                                    ?.length > 0
+                                            ) {
+                                                if (
+                                                    infoDiv
+                                                ) {
+                                                    infoDiv.textContent =
+                                                        "✔ Voici vos disponibilités";
+
+                                                    infoDiv.classList.add(
+                                                        "show"
+                                                    );
+                                                }
+
+                                                window.currentAvailability =
+                                                    data.availability;
+                                                updateAvailabilityUI();
+
+                                            } else {
+                                                if (
+                                                    infoDiv
+                                                ) {
+                                                    infoDiv.textContent =
+                                                        "✔ Aucune saisie";
+                                                    infoDiv.classList.add(
+                                                        "show"
+                                                    );
+                                                }
+                                            }
+                                        },
+                                        50
+                                    );
+
+                                } catch (err) {
+                                    console.error(
+                                        "ERROR:",
+                                        err
+                                    );
+                                }
+                            },
+                            300
+                        );
+                }
+            );
+        }
+    }
+);
+
+// mise à jour des disponibilités
 
 function updateAvailabilityUI() {
 
-    if (isUpdatingUI) return;
+    if (isUpdatingUI) {
+        return;
+    }
     isUpdatingUI = true;
-    const checkboxes = document.querySelectorAll("#matchDaysContainer input[type=checkbox]");
-    // reset systématique
-    checkboxes.forEach(cb => cb.checked = false);
 
-    if (!window.currentAvailability) {
+    const checkboxes =
+        document.querySelectorAll(
+            "#matchDaysContainer input[type=checkbox]"
+        );
+
+    // Reset systématique
+    checkboxes.forEach(cb => {
+        cb.checked = false;
+    });
+
+    if (
+        !window.currentAvailability
+    ) {
         isUpdatingUI = false;
         return;
     }
-    const selectedDay = parseInt(
-        document.getElementById("match_day_id").value
-    );
-    const dayData = window.currentAvailability.find(d =>
-        parseInt(d.match_day_id) === selectedDay
-    );
-
-    if (dayData && dayData.slots) {
-        applySlots(dayData.slots);
+    const selectedDay =
+        parseInt(
+            document
+                .getElementById(
+                    "match_day_id"
+                )
+                .value,
+            10
+        );
+    const dayData =
+        window.currentAvailability.find(
+            d =>
+                parseInt(
+                    d.match_day_id,
+                    10
+                ) === selectedDay
+        );
+    if (
+        dayData &&
+        dayData.slots
+    ) {
+        applySlots(
+            dayData.slots
+        );
     } else {
         resetSlots();
     }
+
     isUpdatingUI = false;
 }
+
