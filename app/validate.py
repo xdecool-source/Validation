@@ -30,8 +30,8 @@ if not SECRET_KEY:
     raise Exception("SECRET_KEY non défini !")
 MAX_AFFICHE_JOUR_VALIDE = int(os.getenv("MAX_AFFICHE_JOUR_VALIDE"))
 DATE_LIMITE = int(os.getenv("DATE_LIMITE"))
-print("🔧 DATE_LIMITE =", DATE_LIMITE)
-print("🔧 Type =", type(DATE_LIMITE))
+# print("🔧 DATE_LIMITE =", DATE_LIMITE)
+# print("🔧 Type =", type(DATE_LIMITE))
 
 
 @asynccontextmanager
