@@ -61,11 +61,16 @@ def init_db(role: str = Depends(require_admin)):
 
 @router.get("/auth-player")
 def auth_player(license: str, user=Depends(verify_token)):
+    
+    # print("AUTH PLAYER - licence reçue :", repr(license))
+    # print("AUTH PLAYER - utilisateur :", user)
+    
     with engine.connect() as conn:
         player = conn.execute(text("""
             SELECT id FROM players WHERE license = :license
         """), {"license": license}).fetchone()
-
+        # print("AUTH PLAYER - joueur trouvé :", player)
+        
         if not player:
             raise HTTPException(status_code=404, detail="Licence inconnue")
     return {

@@ -4,6 +4,11 @@
 # 1 = J1 journée 1 
 # 2 = J2 journée 2 "2026-09-20"
 
+#
+{"id": 1, "code": "J1", "date": "2026-09-20"},
+{"id": 2, "code": "J2", "date": "2026-10-04"},
+#
+
 from dotenv import load_dotenv
 import os
 load_dotenv()
