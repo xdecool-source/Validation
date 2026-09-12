@@ -836,8 +836,8 @@ document.addEventListener(
                                     licenseInput
                                         .value
                                         .trim();
-                                console.log("LICENCE DANS APP.JS =", license);
-                                console.log("LONGUEUR =", license.length);
+                                // console.log("LICENCE DANS APP.JS =", license);
+                                // console.log("LONGUEUR =", license.length);
 
                                 if (
                                     !/^[0-9]{6,7}$/
@@ -1050,8 +1050,8 @@ document.addEventListener(
                                 }
                             },
                             // gestion licence 6 ou 7 caracteres auto remplissage
-                            
-                            licenseInput.value.trim().length === 6 ? 1000 : 300
+
+                            licenseInput.value.trim().length === 6 ? 1500 : 300
                             
                         );
                 }
