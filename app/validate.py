@@ -19,6 +19,8 @@ from dotenv import load_dotenv
 from app.admin import init_match_slots
 from sqlalchemy import text
 
+from app.export_joueurs import router as export_joueurs_router
+
 import os
 
 load_dotenv()
@@ -55,6 +57,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.include_router(admin_router)
 app.include_router(import_router)
+
+app.include_router(export_joueurs_router)
+
 
 app.mount("/static-admin", StaticFiles(directory="admin"), name="admin")
 app.mount("/static", StaticFiles(directory="static"), name="static")

@@ -1,5 +1,6 @@
 *.pyc
 .env
+serie.txt
 Procfile
 A_Info/
 __pycache__/

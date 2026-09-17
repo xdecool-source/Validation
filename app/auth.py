@@ -31,7 +31,6 @@ def create_token(role: str, user_license: str):
         algorithm=ALGORITHM
     )
 
-
 # Vérification token
 def verify_token(authorization: str = Header(None)):
 
@@ -65,7 +64,6 @@ def verify_token(authorization: str = Header(None)):
             detail="Token invalide"
         )
 
-
 # User
 def require_user(user=Depends(verify_token)):
 
@@ -75,7 +73,6 @@ def require_user(user=Depends(verify_token)):
             detail="Accès refusé"
         )
     return user
-
 
 # Admin
 def require_admin(user=Depends(verify_token)):

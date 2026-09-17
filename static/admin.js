@@ -234,6 +234,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     document
         .getElementById("match_day_id")
         .addEventListener("change", loadDispos);
+    
+    // ajout pour export 
+    const exportButton =
+        document.getElementById("exportJoueursBtn");
+
+    if (exportButton) {
+        exportButton.addEventListener(
+            "click",
+            exportJoueurs
+        );
+    }
 });
 
 function setSort(type) {
@@ -241,4 +252,141 @@ function setSort(type) {
     // .log("CLICK SORT:", type); 
     currentSort = type;
     loadDispos(); // recharge avec nouveau tri
+}
+
+// export fftt → neon + excel new
+
+async function exportJoueurs() {
+
+    const button =
+        document.getElementById(
+            "exportJoueursBtn"
+        );
+    const result =
+        document.getElementById(
+            "exportJoueursResult"
+        );
+    const token =
+        localStorage.getItem("token");
+
+    if (!token) {
+        alert(
+            "Session administrateur inexistante."
+        );
+        location.reload();
+        return;
+    }
+
+    button.disabled = true;
+    button.innerText =
+        " Export en cours...";
+    result.innerHTML =
+        "Récupération des joueurs FFTT...";
+
+    try {
+        const response =
+            await fetch(
+                "/export-joueurs/export",
+                {
+                    method: "POST",
+                    headers: {
+                        "Authorization":
+                            "Bearer " + token
+                    }
+                }
+            );
+
+        // Token expiré ou accès refusé
+        if (
+            response.status === 401 ||
+            response.status === 403
+        ) {
+            let message =
+                "Accès administrateur refusé.";
+            try {
+                const data =
+                    await response.json();
+
+                if (data.detail) {
+                    message = data.detail;
+                }
+            } catch (e) {}
+
+            localStorage.removeItem("token");
+            alert(message);
+            location.reload();
+            return;
+        }
+
+        // Autre erreur
+        if (!response.ok) {
+            let message =
+                "Erreur pendant l'export.";
+            try {
+                const data =
+                    await response.json();
+                if (data.detail) {
+                    message = data.detail;
+                }
+            } catch (e) {}
+            throw new Error(message);
+        }
+        result.innerHTML =
+            " Génération du fichier Excel...";
+
+        // Récupération du fichier
+        const blob =
+            await response.blob();
+        const nombreJoueurs =
+        response.headers.get("X-Nombre-Joueurs");
+        // Nom du fichier
+        let filename =
+            "licencies.xlsx";
+        const disposition =
+            response.headers.get(
+                "Content-Disposition"
+            );
+
+        if (disposition) {
+            const match =
+                disposition.match(
+                    /filename="([^"]+)"/
+                );
+            if (match && match[1]) {
+                filename = match[1];
+            }
+        }
+
+        // Téléchargement
+        const url =
+            window.URL.createObjectURL(blob);
+        const link =
+            document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        result.innerHTML =
+            `<span class="text-success">
+            ${nombreJoueurs || "?"} joueurs importés dans notre base <br>
+            Export terminé : ${filename}
+            </span>`;
+
+    } catch (error) {
+        console.error(
+            "Erreur export FFTT :",
+            error
+        );
+        result.innerHTML =
+            `<span class="text-danger">
+                 ${error.message}
+            </span>`;
+
+    } finally {
+        button.disabled = false;
+        button.innerText =
+            "FFTT → Neon + Excel";
+    }
 }
