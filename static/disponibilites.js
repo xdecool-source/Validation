@@ -100,20 +100,35 @@ function updatePlayerNameColor() {
         Array.from(document.querySelectorAll("#match_day_id option"))
         .filter(option => option.value)
         .map(option => parseInt(option.value, 10));
+
     const hasMissingDay =
-        displayedDays.some(dayId => {
-            const dayData = window.currentAvailability.find(
-                d => parseInt(d.match_day_id, 10) === dayId
-            );
-            return !dayData ||
-                   !dayData.slots ||
-                   !dayData.slots.some(slot => slot.available === true);
-        });
+        displayedDays.some(dayId => {
+
+            const option = document.querySelector(
+                `#match_day_id option[value="${dayId}"]`
+            );
+
+            // Journée verrouillée → on ne contrôle pas la saisie
+            if (option && option.disabled) {
+                return false;
+            }
+
+            const dayData = window.currentAvailability.find(
+                d => parseInt(d.match_day_id, 10) === dayId
+            );
+
+            return !dayData ||
+                !dayData.slots ||
+                !dayData.slots.some(slot => slot.available === true);
+        });
+
     if (hasMissingDay) {
         nameDiv.classList.add("no-availability");
         nameDiv.classList.remove("has-availability");
         if (statusDiv) {
             statusDiv.textContent = "Au moins une Journée non saisie";
+            statusDiv.style.setProperty("color", "#34c759", "important");
+            statusDiv.style.setProperty("font-weight", "normal", "important");
         }
     } else {
         nameDiv.classList.remove("no-availability");
@@ -124,7 +139,7 @@ function updatePlayerNameColor() {
     }
 }
 async function initAvailability() {
-    
+
     const licenseInput = document.getElementById("license");
     if (licenseInput) {
         licenseInput.value = "";
@@ -254,18 +269,24 @@ async function initAvailability() {
             resetSlots();
             setSlotsDisabled(true);
             clearResult();
-            const nameDiv =
-                document.getElementById("player_name");
-            const infoDiv =
-                document.getElementById("player_info");
+            const nameDiv = document.getElementById("player_name");
+            const infoDiv = document.getElementById("player_info");
+            const statusDiv = document.getElementById("availability_status");
             if (nameDiv) {
                 nameDiv.textContent = "";
                 nameDiv.classList.remove("show");
             }
             if (infoDiv) {
                 infoDiv.textContent = "";
-                infoDiv.classList.remove("show");
+                infoDiv.classList.remove("show", "no-input");
+                infoDiv.style.removeProperty("color");
+                infoDiv.style.removeProperty("background"); 
             }
+            if (statusDiv) {
+                statusDiv.textContent = "";
+                statusDiv.style.removeProperty("color");
+                statusDiv.style.removeProperty("font-weight");
+            }
             window.currentAvailability = null;
             playerValid = false;
         }
@@ -342,9 +363,9 @@ async function initAvailability() {
                         document.getElementById("player_info");
                     if (!data.name) {
                         if (infoDiv) {
-                            infoDiv.textContent =
-                                "Licence inconnue";
-                            infoDiv.classList.add("show");
+                            infoDiv.textContent = "Licence inconnue";
+                            infoDiv.classList.add("show", "no-input");
+                            infoDiv.style.setProperty("color", "#34c759", "important");
                         }
                         playerValid = false;
                         return;
@@ -359,18 +380,18 @@ async function initAvailability() {
                     setTimeout(() => {
                         if (data.availability?.length > 0) {
                             if (infoDiv) {
-                                infoDiv.textContent =
-                                    "✔ Voici vos disponibilités";
-                                infoDiv.classList.add("show");
+                                infoDiv.textContent = "✔ Voici vos disponibilités";
+                                infoDiv.classList.add("show", "no-input");
+                                infoDiv.style.setProperty("color", "#34c759", "important");
                             }
                             window.currentAvailability =
                                 data.availability;
                             updateAvailabilityUI();
                         } else {
                             if (infoDiv) {
-                                infoDiv.textContent =
-                                    "✔ Aucune saisie";
-                                infoDiv.classList.add("show");
+                                infoDiv.textContent = "✔ Aucune saisie";
+                                infoDiv.classList.add("show", "no-input");
+                                infoDiv.style.setProperty("color", "#34c759", "important");
                             }
                         }
                     }, 50);
