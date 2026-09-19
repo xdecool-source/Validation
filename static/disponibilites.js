@@ -138,6 +138,7 @@ function updatePlayerNameColor() {
         }
     }
 }
+
 async function initAvailability() {
 
     const licenseInput = document.getElementById("license");
@@ -292,14 +293,18 @@ async function initAvailability() {
         }
         licenseInput.addEventListener("focus", resetField);
         licenseInput.addEventListener("click", resetField);
+
+// Gestion timeout je fait rien avant 5 chiffres puis attend 500 ms avant de faire le recherche  
         licenseInput.addEventListener("input", () => {
             clearTimeout(timeout);
-            timeout = setTimeout(async () => {
-                const license = licenseInput.value.trim();
-                if (!/^[0-9]{5,7}$/.test(license)) {
-                    playerValid = false;
+            const license = licenseInput.value.trim();
+             if (!/^[0-9]{5,7}$/.test(license)) {
+                playerValid = false;
                     return;
                 }
+    // Recherche 500 ms après la dernière frappe (voir en bas du fichier)
+            timeout = setTimeout(async () => {
+
                 resetSlots();
                 setSlotsDisabled(true);
                 window.currentAvailability = null;
@@ -398,7 +403,8 @@ async function initAvailability() {
                 } catch (err) {
                     console.error("ERROR:", err);
                 }
-            }, licenseInput.value.trim().length === 6 ? 1500 : 300);
-        });
-    }
+            // le timer est de 500 ms 0,5 seconde
+            }, 500);
+        });
+    }
 }
