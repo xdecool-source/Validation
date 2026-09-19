@@ -331,6 +331,13 @@ button:hover {
         font-weight: bold;
     }
 
-    
+
 }
 
+/* Aucune journée sélectionnée */
+
+#availability_status {
+    color: rgb(8, 0, 255);
+    font-weight: bold;
+    margin-top: 5px;
+}

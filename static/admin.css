@@ -1,0 +1,63 @@
+table {
+    width: 100% !important;
+    table-layout: fixed !important;
+}
+
+table thead th,
+#table-body td {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+table thead th:nth-child(1),
+#table-body td:nth-child(1) {
+    width: 20% !important;
+}
+
+table thead th:nth-child(2),
+#table-body td:nth-child(2) {
+    width: 20% !important;
+}
+
+table thead th:nth-child(3),
+#table-body td:nth-child(3) {
+    width: 60% !important;
+}
+
+#table-body td:nth-child(1) {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+#table-body td:nth-child(2) .badge {
+    font-size: 0.85rem;
+    padding: 0.35em 0.6em;
+}
+
+#table-body td:nth-child(3) {
+    padding: 8px 10px !important;
+}
+
+.admin-slots {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+}
+
+.admin-slots .badge {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    margin: 0 !important;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    padding: 0.45em 0.2em;
+}
