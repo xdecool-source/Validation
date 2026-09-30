@@ -1,8 +1,6 @@
 # http://127.0.0.1:8000
 # http://127.0.0.1:8000/admin-dispo
 # http://127.0.0.1:8000/?admin=valeur_de_admin_token
-# 1 = J1 journée 1 
-# 2 = J2 journée 2 "2026-09-20"
 
 #
 {"id": 1, "code": "J1", "date": "2026-09-20"},
@@ -13,7 +11,7 @@ from dotenv import load_dotenv
 import os
 load_dotenv()
 
-temps_expi_token = 10
+temps_expi_token = 10 # minutes 
 
 class Settings:
     DATABASE_URL: str = os.getenv("DATABASE_URL")  

@@ -36,8 +36,6 @@ async def import_joueur(
     try:
         content = await file.read()
         #print(" SIZE:", len(content))
-
-        df = pd.read_excel(io.BytesIO(content), sheet_name=0, dtype=str)
         #print("EXCEL LU")
         #print("COLUMNS:", df.columns.tolist())
         #print("NB ROWS:", len(df))
@@ -98,6 +96,10 @@ async def import_joueur(
                     DO UPDATE SET
                         name = EXCLUDED.name,
                         ranking = EXCLUDED.ranking
+                        type_certif = EXCLUDED.type_certif
+                        type_licence = EXCLUDED.type_licence
+                        validation = EXCLUDED.validation
+                        email = EXCLUDED.email
                     RETURNING (xmax = 0) AS inserted
                 """), p)
 

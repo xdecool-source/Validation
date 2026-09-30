@@ -1,10 +1,10 @@
 # Gestion connexion a l'application Validation
 # Gère la connexion avec tokens/JWT et rôles admin/utilisateur ;
 # Enregistre les disponibilités des joueurs pour les matchs ;
-# Sécurise l’accès avec codes PIN et limite de tentatives ;
+# Sécurise l’accès avec codes PIN et limite de tentatives à 5 (valeur 4) ;
 # Enregistre les données en base SQL ;
-# attempts[ip]["count"] > 5  nombre de tentative avant blocage donc 6
-# attempts[ip]["time"] < 60 durée de blocage 60 secondes 
+# attempts[ip]["count"] > 4  nombre de tentative avant blocage donc 5
+# attempts[ip]["time"] < 120 durée de blocage 60 secondes 
 
 from fastapi import APIRouter, Body, HTTPException, Request, Header, Depends
 from fastapi.responses import StreamingResponse
@@ -93,8 +93,8 @@ def check_access(code: str, request: Request):
     ip = request.client.host
     now = time()
 
-    if ip in attempts and attempts[ip]["count"] > 5:
-        if now - attempts[ip]["time"] < 60:
+    if ip in attempts and attempts[ip]["count"] > 4:
+        if now - attempts[ip]["time"] < 120:
             raise HTTPException(status_code=429, detail="Trop de tentatives")
     if code == ADMIN_PIN:
         attempts[ip] = {"count": 0, "time": now}
