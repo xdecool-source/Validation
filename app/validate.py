@@ -42,6 +42,7 @@ async def lifespan(app: FastAPI):
     print("")
     print(" 🟢 Validation Planning : Vérification / création des tables...")
     print("")
+    
     # Pour reveiller la base avant le premier insert 
     try:
         with engine.begin() as conn:
@@ -57,15 +58,12 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.include_router(admin_router)
 app.include_router(import_router)
-
 app.include_router(export_joueurs_router)
-
 
 app.mount("/static-admin", StaticFiles(directory="admin"), name="admin")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
-
 
 def get_db():
     db = SessionLocal()

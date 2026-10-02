@@ -44,11 +44,8 @@ async def import_joueur(
 
         # Nettoyage des noms de colonnes
         df.columns = df.columns.str.strip()
-
         players = []
-
         for _, row in df.iterrows():
-
             license_number = str(row.get("N° licence", "")).strip()
             last_name = str(row.get("Nom", "")).strip()
             first_name = str(row.get("Prénom", "")).strip()
@@ -104,11 +101,8 @@ async def import_joueur(
                 """), p)
 
                 row = result.fetchone()
-
-                if row[0]:
-                    inserted += 1
-                else:
-                    updated += 1
+                if row[0]: inserted += 1
+                else: updated += 1
                     
         return {
             "message": "Import réussi",

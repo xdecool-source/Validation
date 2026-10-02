@@ -13,18 +13,12 @@ const SLOTS = [
     { label: "Absent" }
 ];
 
-
 async function wakeDatabase() {
 
     try {
-        await fetch("/ping", {
-            method: "GET",
-            cache: "no-store"
-        });
+        await fetch("/ping", {method: "GET",cache: "no-store"});
         console.log(" Base de données réveillée");
-    } catch (err) {
-        console.warn(" Réveil de la base impossible :", err);
-    }
+    } catch (err) {console.warn(" Réveil de la base impossible :", err);}
 }
 
 async function login(code) {
@@ -35,18 +29,10 @@ async function login(code) {
         console.log("Ping impossible", e);
     }
     const license = document.getElementById("license").value.trim();
-    if (!license) {
-        alert("Entre ta licence");
-        return;
-    }
+    if (!license) {alert("Entre ta licence");return;}
     const res = await fetch(`/check-access?code=${code}`);
     const data = await res.json();
-
-    if (!data.ok) {
-        alert("Code incorrect");
-        return;
-    }
-
+    if (!data.ok) {alert("Code incorrect");return;}
     const authRes = await fetch(`/auth-player?license=${license}`);
     const authData = await authRes.json();
     token = authData.token;
@@ -63,18 +49,11 @@ function checkAdmin() {
         if (payload.role === "admin") {
             isAdmin = true;
             const importForm = document.getElementById("importForm");
-            if (importForm) {
-                importForm.style.display = "block";
-            }
-            const importMessage =
-                document.getElementById("importMessage");
-            if (importMessage) {
-                importMessage.style.display = "block";
-            }
+            if (importForm) {importForm.style.display = "block";}
+            const importMessage = document.getElementById("importMessage");
+            if (importMessage) {importMessage.style.display = "block";}
         }
-    } catch (err) {
-        console.error("Erreur token:", err);
-    }
+    } catch (err) {console.error("Erreur token:", err);}
 }
 
 function resetUI() {
@@ -98,14 +77,9 @@ function clearResult() {
 async function safeFetch(url) {
 
     const currentToken = localStorage.getItem("token");
-    if (!currentToken) {
-        alert("Tu dois te connecter");
-        return null;
-    }
+    if (!currentToken) {alert("Tu dois te connecter");return null;}
     const res = await fetch(url, {
-        headers: {
-            "Authorization": "Bearer " + currentToken
-        }
+        headers: {"Authorization": "Bearer " + currentToken}
     });
     if (res.status === 403) {
         const data = await res.json();
@@ -118,53 +92,32 @@ async function safeFetch(url) {
         }
         return null;
     }
-
-    if (!res.ok) {
-        throw new Error(`Erreur API: ${url}`);
-    }
+    if (!res.ok) {throw new Error(`Erreur API: ${url}`);}
     return res.json();
 }
 
 function setSlotsDisabled(disabled) {
 
-    const checkboxes =
-        document.querySelectorAll(
-            "#matchDaysContainer input[type=checkbox]"
-        );
+    const checkboxes = document.querySelectorAll("#matchDaysContainer input[type=checkbox]");
     checkboxes.forEach(cb => {
         cb.disabled = disabled;
-        if (cb.parentElement) {
-            cb.parentElement.style.opacity = disabled ? "0.4" : "1";
-        }
+        if (cb.parentElement) {cb.parentElement.style.opacity = disabled ? "0.4" : "1";}
     });
 }
 
 // Configuration.
 // Ces valeurs restent dans app.js comme dans ton fichier actuel.
-
-const MAX_AFFICHE_JOUR_VALIDE = Number(
-    document.body.dataset.maxAffiche
-);
-
-const DATE_LIMITE = Number(
-    document.body.dataset.dateLimite
-);
+const MAX_AFFICHE_JOUR_VALIDE = Number(document.body.dataset.maxAffiche);
+const DATE_LIMITE = Number(document.body.dataset.dateLimite);
 
 console.log(
-    "CONFIG :",
-    MAX_AFFICHE_JOUR_VALIDE,
-    DATE_LIMITE
-);
+    "CONFIG :",MAX_AFFICHE_JOUR_VALIDE,DATE_LIMITE);
 
-console.log(
-    "DATE_LIMITE valide ?",
-    Number.isFinite(DATE_LIMITE)
-);
+console.log("DATE_LIMITE valide ?",Number.isFinite(DATE_LIMITE));
 
 // Initialisation générale.
 // Admin.js possède sa propre initialisation pour l'écran admin.
 // Ici on initialise le joueur.
-
 document.addEventListener("DOMContentLoaded", async () => {
     document.body.style.visibility = "hidden";
     checkAdmin();

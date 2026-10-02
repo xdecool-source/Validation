@@ -8,26 +8,28 @@ function updateDaySelectColor() {
     if (!daySelect) return;
     const selectedDay =
         parseInt(daySelect.value, 10);
+
     // Pas de journée sélectionnée
     if (Number.isNaN(selectedDay)) {
         daySelect.classList.remove("day-selected");
         daySelect.classList.add("no-day-selected");
         return;
     }
-    // Recherche les disponibilités de cette journée
 
+    // Recherche les disponibilités de cette journée
     const dayData =
         window.currentAvailability?.find(
             d =>
                 parseInt(d.match_day_id, 10) === selectedDay
         );
-    // Vérifie si AU MOINS une valeur est sélectionnée
 
+    // Vérifie si AU MOINS une valeur est sélectionnée
     const hasSelection =
         dayData?.slots?.some(
             slot => slot.available === true
         ) === true;
     if (hasSelection) {
+
         // Journée renseignée → couleur normale
         daySelect.classList.remove("no-day-selected");
         daySelect.classList.add("day-selected");
@@ -49,8 +51,8 @@ function updateAvailabilityUI() {
         document.querySelectorAll(
             "#matchDaysContainer input[type=checkbox]"
         );
-    // Reset systématique
 
+    // Reset systématique
     checkboxes.forEach(cb => {
         cb.checked = false;
     });
@@ -70,16 +72,13 @@ function updateAvailabilityUI() {
             d =>
                 parseInt(d.match_day_id, 10) === selectedDay
         );
-    if (
-        dayData &&
-        dayData.slots
-    ) {
+    if (dayData &&dayData.slots) {
         applySlots(dayData.slots);
     } else {
         resetSlots();
     }
-    // Mise à jour de la couleur du nom
 
+    // Mise à jour de la couleur du nom
     updatePlayerNameColor();
     isUpdatingUI = false;
 }
@@ -109,17 +108,10 @@ function updatePlayerNameColor() {
             );
 
             // Journée verrouillée → on ne contrôle pas la saisie
-            if (option && option.disabled) {
-                return false;
-            }
-
-            const dayData = window.currentAvailability.find(
-                d => parseInt(d.match_day_id, 10) === dayId
-            );
-
+            if (option && option.disabled) {return false;}
+            const dayData = window.currentAvailability.find(d => parseInt(d.match_day_id, 10) === dayId);
             return !dayData ||
-                !dayData.slots ||
-                !dayData.slots.some(slot => slot.available === true);
+                !dayData.slots || !dayData.slots.some(slot => slot.available === true);
         });
 
     if (hasMissingDay) {
@@ -133,33 +125,25 @@ function updatePlayerNameColor() {
     } else {
         nameDiv.classList.remove("no-availability");
         nameDiv.classList.add("has-availability");
-        if (statusDiv) {
-            statusDiv.textContent = "";
-        }
+        if (statusDiv) {statusDiv.textContent = "";}
     }
 }
 
 async function initAvailability() {
 
     const licenseInput = document.getElementById("license");
-    if (licenseInput) {
-        licenseInput.value = "";
-    }
+    if (licenseInput) {licenseInput.value = "";}
     const playerName = document.getElementById("player_name");
     const playerInfo = document.getElementById("player_info");
     if (playerName) playerName.textContent = "";
     if (playerInfo) playerInfo.textContent = "";
-    if (localStorage.getItem("token")) {
-        await loadData();
-    }
+    if (localStorage.getItem("token")) {await loadData();}
     const daySelect = document.getElementById("match_day_id");
     if (daySelect) {
         daySelect.addEventListener("change", () => {
             updateDaySelectColor();
             renderSlotsForSelectedDay();
-            if (window.currentAvailability) {
-                updateAvailabilityUI();
-            }
+            if (window.currentAvailability) {updateAvailabilityUI();}
             updateClosureInfo();
         });
     }
@@ -168,28 +152,13 @@ async function initAvailability() {
         form.addEventListener("input", clearResult);
         form.addEventListener("submit", async function (e) {
             e.preventDefault();
-            if (!playerValid) {
-                alert("Licence invalide");
-                return;
-            }
-            const selectedDay = parseInt(
-                document.getElementById("match_day_id").value,
-                10
-            );
-            if (Number.isNaN(selectedDay)) {
-                alert("Merci de sélectionner une journée");
-                return;
-            }
-            const checkboxes = Array.from(
-                document.querySelectorAll(
-                    "#matchDaysContainer input[type=checkbox]"
-                )
-            );
+            if (!playerValid) {alert("Licence invalide"); return; }
+            const selectedDay = parseInt( document.getElementById("match_day_id").value, 10);
+            if (Number.isNaN(selectedDay)) { alert("Merci de sélectionner une journée"); return; }
+            const checkboxes = Array.from(document.querySelectorAll("#matchDaysContainer input[type=checkbox]" ) );
             const absentChecked = checkboxes.find(
                 cb =>
-                    cb.dataset.label === "Absent" &&
-                    cb.checked
-            );
+                    cb.dataset.label === "Absent" && cb.checked);
             const slots = checkboxes.map(cb => {
                 if (
                     absentChecked &&
@@ -294,7 +263,7 @@ async function initAvailability() {
         licenseInput.addEventListener("focus", resetField);
         licenseInput.addEventListener("click", resetField);
 
-// Gestion timeout je fait rien avant 5 chiffres puis attend 500 ms avant de faire le recherche  
+// Gestion timeout je fais rien avant 5 chiffres puis attend 1000 ms avant de faire le recherche  
         licenseInput.addEventListener("input", () => {
             clearTimeout(timeout);
             const license = licenseInput.value.trim();
@@ -302,7 +271,7 @@ async function initAvailability() {
                 playerValid = false;
                     return;
                 }
-    // Recherche 500 ms après la dernière frappe (voir en bas du fichier)
+    // Recherche 800 ms après la dernière frappe (voir en bas du fichier)
             timeout = setTimeout(async () => {
 
                 resetSlots();
@@ -403,8 +372,8 @@ async function initAvailability() {
                 } catch (err) {
                     console.error("ERROR:", err);
                 }
-            // le timer est de 500 ms 0,5 seconde
-            }, 500);
+            // le timer est de 500 ms 1 seconde
+            }, 1000);
         });
     }
 }

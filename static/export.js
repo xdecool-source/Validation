@@ -20,36 +20,27 @@ if (!Array.isArray(data)) {
 const wb = XLSX.utils.book_new();
 
 // Extaire les créneaux
-
 const ALL_SLOTS = new Set();
 data.forEach(r => {
     if (!r.slots) return;
     r.slots.split(",").forEach(s => {
         const [key] = s.split(":");
-        if (key && key.trim() !== "Absent") {
-            ALL_SLOTS.add(key.trim());
-        }
+        if (key && key.trim() !== "Absent") {ALL_SLOTS.add(key.trim());}
     });
 });
 const SLOT_LIST = Array.from(ALL_SLOTS);
 
 //  Disponibilité
-
 const isDisponible = (val) => {
-
     if (!val) return false;
     val = val.trim().toLowerCase();
     return val === "true" || val === "1" || val === "disponible";
 };
 
 // Format Général
-
 const format = (arr) => arr.map(r => {
 
-    const row = {
-        Nom: r.name,
-        Classement: r.ranking,
-    };
+    const row = {Nom: r.name,Classement: r.ranking,};
     SLOT_LIST.forEach(slot => row[slot] = "");
     let isAbsent = false;
     const slotValues = {};
@@ -69,13 +60,9 @@ const format = (arr) => arr.map(r => {
 
     SLOT_LIST.forEach(slot => {
         let dispo;
-        if (slot === "Absent") {
-            dispo = false;
-        } else if (isAbsent) {
-            dispo = false;
-        } else {
-            dispo = slotValues[slot];
-        }
+        if (slot === "Absent") {dispo = false;
+        } else if (isAbsent) {dispo = false;
+        } else {dispo = slotValues[slot];}
         row[slot] = dispo
             ? "● disponible"
             : "■  indisponible";
@@ -87,7 +74,6 @@ const format = (arr) => arr.map(r => {
 const rankingData = [...data].sort((a, b) => b.ranking - a.ranking);
 
 //  Feuille principale
-
 function createSheet(name, dataset) {
 
     const formatted = format(dataset);
@@ -113,7 +99,6 @@ function createSheet(name, dataset) {
 }
 
 //  Feuilles par crénaux
-
 function createSheetsBySlot() {
 
     SLOT_LIST.forEach(slot => {
@@ -123,9 +108,7 @@ function createSheetsBySlot() {
             let isAbsent = false;
             r.slots.split(",").forEach(s => {
                 const [key, val] = s.split(":");
-                if (key.trim() === "Absent" && isDisponible(val)) {
-                    isAbsent = true;
-                }
+                if (key.trim() === "Absent" && isDisponible(val)) {isAbsent = true;}
             });
 
             r.slots.split(",").forEach(s => {
@@ -175,6 +158,7 @@ function createSheetsBySlot() {
         XLSX.utils.book_append_sheet(wb, ws, slot);
     });
 }
+
 // Tri  supplémentaire
 const dispoData = [...data].sort((a, b) => {
     return getDispoCount(b) - getDispoCount(a);
@@ -184,15 +168,12 @@ const indispoData = [...data].sort((a, b) => {
 });
 
 //  Gestion des dispos
-
 function getDispoCount(row) {
 
     if (!row.slots) return 0;
-
     return row.slots.split(",").filter(s => {
         const [key, val] = s.split(":");
         if (key.trim() === "Absent") return false;
-
         return isDisponible(val);
     }).length;
 }
@@ -200,11 +181,9 @@ function getDispoCount(row) {
 function getIndispoCount(row) {
 
     if (!row.slots) return 0;
-
     return row.slots.split(",").filter(s => {
         const [key, val] = s.split(":");
         if (key.trim() === "Absent") return false;
-
         return !isDisponible(val);
     }).length;
 }
@@ -214,7 +193,6 @@ function createAbsentSheet() {
     const rows = data
         .filter(r => {
             if (!r.slots) return false;
-
             return r.slots.split(",").some(s => {
                 const [key, val] = s.split(":");
                 return key?.trim() === "Absent" &&
@@ -245,6 +223,7 @@ function createAbsentSheet() {
 
     if (select && select.options.length > 0) {
         const text = select.options[select.selectedIndex].text;
+
         // extrait "J1", "J2", etc.
         const match = text.match(/J\d+/i);
         if (match) {
@@ -259,7 +238,6 @@ function createAbsentSheet() {
 }
 
 // Taille Automatique
-
 function autoSizeColumns(data) {
     const widths = [];
     data.forEach(row => {

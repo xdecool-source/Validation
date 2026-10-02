@@ -17,33 +17,22 @@ router = APIRouter(
 )
 
 @router.post("/export")
+
 def export_joueurs(
     admin=Depends(require_admin)
 ):
 
     # club fftt
-
-    club = os.getenv(
-        "FFTT_CLUB",
-        "11660007"
-    )
-
+    club = os.getenv("FFTT_CLUB","11660007")
     print("")
     print(" EXPORT JOUEURS FFTT")
     print(f"Club FFTT : {club}")
 
     # récupération fftt
-
     try:
-        xml = appel(
-            "xml_licence_b.php",
-            club=club
-        )
+        xml = appel("xml_licence_b.php",club=club)
     except Exception as e:
-        print(
-            "Erreur récupération FFTT :",
-            e
-        )
+        print("Erreur récupération FFTT :",e)
         raise HTTPException(
             status_code=500,
             detail=(
@@ -53,47 +42,28 @@ def export_joueurs(
         )
 
     # parsing / filtrage / tri
-
     try:
 
-        joueurs = trier_points(
-            filtre_saison(
-                parse_liste(xml)
-            )
-        )
+        joueurs = trier_points(filtre_saison(parse_liste(xml)))
 
     except Exception as e:
-        print(
-            "Erreur traitement joueurs :",
-            e
-        )
+        print("Erreur traitement joueurs :",e)
         raise HTTPException(
             status_code=500,
-            detail=(
-                "Erreur lors du traitement "
-                f"des joueurs : {e}"
-            )
+            detail=("Erreur lors du traitement " f"des joueurs : {e}")
         )
 
-    print(
-        f"👥 {len(joueurs)} joueurs récupérés"
-    )
+    print(f"👥 {len(joueurs)} joueurs récupérés")
 
     # export neon
-
     try:
-
         nombre = export_neon(joueurs)
     except Exception as e:
 
-        print(
-            "Erreur export Neon :",
-            e
-        )
+        print("Erreur export Neon :",e)
         raise HTTPException(
             status_code=500,
-            detail=(
-                "Erreur lors de l'export "
+            detail=("Erreur lors de l'export "
                 f"vers Neon : {e}"
             )
         )
@@ -102,36 +72,18 @@ def export_joueurs(
     )
 
     # export excel
-
     temp_path = None
     try:
-        with tempfile.NamedTemporaryFile(
-            suffix=".xlsx",
-            delete=False
-        ) as tmp:
-            temp_path = tmp.name
-        export_excel(
-            joueurs,
-            temp_path
-        )
-        with open(
-            temp_path,
-            "rb"
-        ) as f:
-            data = f.read()
+        with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp: temp_path = tmp.name
+        export_excel(joueurs,temp_path)
+        with open(temp_path,"rb") as f: data = f.read()
 
     except Exception as e:
-
         print(
-            "Erreur génération Excel :",
-            e
-        )
+            "Erreur génération Excel :",e)
         raise HTTPException(
             status_code=500,
-            detail=(
-                "Erreur lors de la génération "
-                f"du fichier Excel : {e}"
-            )
+            detail=("Erreur lors de la génération " f"du fichier Excel : {e}")
         )
 
     finally:
@@ -142,19 +94,11 @@ def export_joueurs(
                 pass
 
     # nom du fichier
-
-    today = date.today().strftime(
-        "%Y-%m-%d"
-    )
-    filename = (
-        f"licencies_{club}_{today}.xlsx"
-    )
-    print(
-        f"📥 Fichier généré : {filename}"
-    )
+    today = date.today().strftime("%Y-%m-%d")
+    filename = (f"licencies_{club}_{today}.xlsx")
+    print(f"📥 Fichier généré : {filename}")
 
     # téléchargement
-
     return Response(
         content=data,
         media_type=(

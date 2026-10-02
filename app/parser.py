@@ -28,6 +28,7 @@ class Joueur:
 
 
 def parse_liste(xml):
+    
     root = ET.fromstring(xml)
     joueurs = []
 
@@ -36,7 +37,6 @@ def parse_liste(xml):
             points = float(j.findtext("point", "0").replace(",", "."))
         except ValueError:
             points = 0.0
-
         joueurs.append(
             Joueur(
                 licence=j.findtext("licence", ""),
@@ -55,6 +55,7 @@ def parse_liste(xml):
     return joueurs
 
 def filtre_saison(joueurs):
+    
     resultat = []
     for j in joueurs:
         if not j.validation:
@@ -68,6 +69,7 @@ def filtre_saison(joueurs):
     return resultat
 
 def trier_points(joueurs):
+    
     return sorted(
         joueurs,
         key=lambda j: (-j.points, j.nom, j.prenom)

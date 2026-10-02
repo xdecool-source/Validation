@@ -65,7 +65,6 @@ function formatLabel(label) {
 async function loadDispos() {
 
     //  console.log("SORT:", currentSort);
-
     const dayId = document.getElementById("match_day_id").value;
     const res = await fetch("/dispos/" + dayId, {
         headers: {
@@ -83,13 +82,9 @@ async function loadDispos() {
     window.currentData = data;
 
     // console.log("STOCK DATA:", window.currentData);
-
     const tbody = document.getElementById("table-body");
     tbody.innerHTML = "";
-        if (!Array.isArray(data)) {
-            console.error("Data invalide:", data);
-            return;
-        }
+        if (!Array.isArray(data)) {console.error("Data invalide:", data); return; }
         const count = (row, type) => {
             if (!row.slots || typeof row.slots !== "string") return 0;
             return row.slots.split(",").filter(s => {
@@ -107,7 +102,6 @@ async function loadDispos() {
         };
 
         // console.log("SORT ACTUEL:", currentSort);
-
         if (currentSort === "dispo") {
             data.sort((a, b) => {
                 const dispoA = count(a, "disponible");
@@ -135,6 +129,7 @@ async function loadDispos() {
                 return dispoA - dispoB;
             });
         } else {
+
             // Tri par classement
             data.sort((a, b) => b.ranking - a.ranking);
         }
@@ -144,11 +139,10 @@ async function loadDispos() {
                 indispo: count(row, "indisponible")
             });
             const tr = document.createElement("tr");
-            if (!row.slots) {
-                // console.warn("Pas de slots:", row);
-                return;
-            }
+            if (!row.slots) {// console.warn("Pas de slots:", row); return;
+ }
             const slots = row.slots.split(",");
+
             //  détecter si au moins une dispo existe
             const hasDispo = slots.some(s => {
                 const parts = s.split(":");
@@ -217,30 +211,21 @@ async function loadDispos() {
         });
 }
 // Initialisation
-
 document.addEventListener("DOMContentLoaded", async () => {
 
     // Vérifie localement le rôle du JWT : aucune dépendance à isAdmin.
     const currentToken = localStorage.getItem("token");
-    if (!currentToken) {
-        return;
-    }
+    if (!currentToken) {return;}
     let adminSession = false;
     try {
-        const payload = JSON.parse(
-            atob(currentToken.split(".")[1])
-        );
+        const payload = JSON.parse(atob(currentToken.split(".")[1]));
         adminSession = payload.role === "admin";
     } catch (err) {
         console.error("Token admin invalide :", err);
         return;
     }
-    if (!adminSession) {
-        return;
-    }
-    if (typeof isAdmin !== "undefined") {
-        isAdmin = true;
-    }
+    if (!adminSession) {return;}
+    if (typeof isAdmin !== "undefined") {isAdmin = true;}
     await loadDays();
     loadDispos();
     document
@@ -267,54 +252,30 @@ function setSort(type) {
 // export fftt → neon + excel new
 async function exportJoueurs() {
 
-    const button =
-        document.getElementById(
-            "exportJoueursBtn"
-        );
-    const result =
-        document.getElementById(
-            "exportJoueursResult"
-        );
-    const token =
-        localStorage.getItem("token");
+    const button = document.getElementById( "exportJoueursBtn");
+    const result = document.getElementById("exportJoueursResult");
+    const token = localStorage.getItem("token");
     if (!token) {
-        alert(
-            "Session administrateur inexistante."
-        );
+        alert( "Session administrateur inexistante." );
         location.reload();
         return;
     }
     button.disabled = true;
-    button.innerText =
-        " Export en cours...";
-    result.innerHTML =
-        "Récupération des joueurs FFTT...";
+    button.innerText = "Export en cours...";
+    result.innerHTML = "Récupération des joueurs FFTT...";
     try {
         const response =
             await fetch(
                 "/export-joueurs/export",
-                {
-                    method: "POST",
-                    headers: {
-                        "Authorization":
-                            "Bearer " + token
-                    }
-                }
+                { method: "POST",headers: {"Authorization": "Bearer " + token }}
             );
 
         // Token expiré ou accès refusé
-        if (
-            response.status === 401 ||
-            response.status === 403
-        ) {
-            let message =
-                "Accès administrateur refusé.";
+        if ( response.status === 401 || response.status === 403 ) {
+            let message = "Accès administrateur refusé.";
             try {
-                const data =
-                    await response.json();
-                if (data.detail) {
-                    message = data.detail;
-                }
+                const data = await response.json();
+                if (data.detail) { message = data.detail;}
             } catch (e) {}
             localStorage.removeItem("token");
             alert(message);
@@ -327,45 +288,30 @@ async function exportJoueurs() {
             let message =
                 "Erreur pendant l'export.";
             try {
-                const data =
-                    await response.json();
-                if (data.detail) {
-                    message = data.detail;
-                }
+                const data = await response.json();
+                if (data.detail) {message = data.detail; }
             } catch (e) {}
             throw new Error(message);
         }
-        result.innerHTML =
-            " Génération du fichier Excel...";
+        result.innerHTML =" Génération du fichier Excel...";
 
         // Récupération du fichier
-        const blob =
-            await response.blob();
+        const blob = await response.blob();
         const nombreJoueurs =
         response.headers.get("X-Nombre-Joueurs");
 
         // Nom du fichier
-        let filename =
-            "licencies.xlsx";
-        const disposition =
-            response.headers.get(
-                "Content-Disposition"
-            );
+        let filename = "licencies.xlsx";
+        const disposition = response.headers.get("Content-Disposition");
         if (disposition) {
             const match =
-                disposition.match(
-                    /filename="([^"]+)"/
-                );
-            if (match && match[1]) {
-                filename = match[1];
-            }
+                disposition.match( /filename="([^"]+)"/);
+            if (match && match[1]) {filename = match[1];}
         }
 
         // Téléchargement
-        const url =
-            window.URL.createObjectURL(blob);
-        const link =
-            document.createElement("a");
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
         link.href = url;
         link.download = filename;
         document.body.appendChild(link);
@@ -378,8 +324,7 @@ async function exportJoueurs() {
             Export terminé : ${filename}
             </span>`;
     } catch (error) {
-        console.error(
-            "Erreur export FFTT :",
+        console.error("Erreur export FFTT :",
             error
         );
         result.innerHTML =

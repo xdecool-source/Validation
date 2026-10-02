@@ -35,7 +35,6 @@ from app.auth import (
 )
 
 # Autorisation
-
 load_dotenv()
 
 PIN_CODE = os.getenv("PIN_CODE")
@@ -53,13 +52,14 @@ def get_slots_from_date(date_str: str):
     ]
 
 # Init DataBase
-
 @router.get("/init-db")
+
 def init_db(role: str = Depends(require_admin)):
     Base.metadata.create_all(bind=engine)
     return {"message": "Tables créées"}
 
 @router.get("/auth-player")
+
 def auth_player(license: str, user=Depends(verify_token)):
     
     # print("AUTH PLAYER - licence reçue :", repr(license))
@@ -73,13 +73,9 @@ def auth_player(license: str, user=Depends(verify_token)):
         
         if not player:
             raise HTTPException(status_code=404, detail="Licence inconnue")
-    return {
-        "ok": True,
-        "token": create_token("user", license)
-    }  
+    return {"ok": True,"token": create_token("user", license)}  
     
 # Reveil de la base 
- 
 @router.get("/ping")
 def ping():
     with engine.connect() as conn:
@@ -87,23 +83,20 @@ def ping():
     return {"ok": True}
   
 # Login
-
 @router.get("/check-access")
+
 def check_access(code: str, request: Request):
     ip = request.client.host
     now = time()
-
     if ip in attempts and attempts[ip]["count"] > 4:
         if now - attempts[ip]["time"] < 120:
             raise HTTPException(status_code=429, detail="Trop de tentatives")
     if code == ADMIN_PIN:
         attempts[ip] = {"count": 0, "time": now}
         return {"ok": True, "token": create_token("admin", "none")}
-        
     if code == PIN_CODE:
         attempts[ip] = {"count": 0, "time": now}
         return {"ok": True, "token": create_token("user", "none")}
-    
     attempts[ip] = {
         "count": attempts.get(ip, {}).get("count", 0) + 1,
         "time": now
@@ -111,8 +104,8 @@ def check_access(code: str, request: Request):
     return {"ok": False}
 
 # Joueurs
-
 @router.get("/joueurs")
+
 def get_days(role: str = Depends(verify_token)):
     with engine.connect() as conn:
         result = conn.execute(text("""
@@ -126,8 +119,8 @@ def get_days(role: str = Depends(verify_token)):
         ]
 
 # Match du jour 
-
 @router.get("/match-days")
+
 def get_match_days():
     with engine.connect() as conn:
         result = conn.execute(text("""
@@ -139,6 +132,7 @@ def get_match_days():
 
 
 @router.get("/init-match-days")
+
 def init_match_days(role: str = Depends(require_admin)):
     with engine.begin() as conn:
         for day in settings.MATCH_DAYS:
@@ -155,6 +149,7 @@ def init_match_days(role: str = Depends(require_admin)):
 # Joueur et licence
 
 @router.get("/player/{license}")
+
 def get_player(license: str, role: str = Depends(verify_token)):
     with engine.connect() as conn:
 
@@ -194,6 +189,7 @@ def get_player(license: str, role: str = Depends(verify_token)):
         }
 
 @router.get("/dispos/{match_day_id}")
+
 def get_dispos(
     match_day_id: int,
     user=Depends(require_admin)
@@ -223,8 +219,8 @@ def get_dispos(
         return {"error": str(e)}
     
 # Initialisation Match
-
 @router.get("/init-match-slots")
+
 def init_match_slots(role: str = Depends(require_admin)):
     with engine.begin() as conn:
 
@@ -253,8 +249,8 @@ def init_match_slots(role: str = Depends(require_admin)):
     return {"message": "match_slots remplie"}   
 
 # Disponibilité
-
 @router.post("/availability")
+
 def add_availability(
     data: dict = Body(...),
     user=Depends(verify_token)
@@ -264,7 +260,6 @@ def add_availability(
         raise HTTPException(status_code=403, detail="Accès interdit")
 
     with engine.begin() as conn:
-
         player = conn.execute(text("""
             SELECT id FROM players WHERE license = :license
         """), {"license": data["license"]}).fetchone()

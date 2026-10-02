@@ -6,18 +6,14 @@ import string
 
 from datetime import datetime
 from pathlib import Path
-
 from dotenv import load_dotenv
 
 load_dotenv()
 
 APP_ID = os.getenv("FFTT_APP_ID", "")
 MOT_DE_PASSE = os.getenv("FFTT_MOT_DE_PASSE", "")
-
 BASE_DIR = Path(__file__).resolve().parent.parent
-SERIE_FILE = Path(
-    os.getenv("FFTT_SERIE_FILE", str(BASE_DIR / "serie.txt"))
-)
+SERIE_FILE = Path(os.getenv("FFTT_SERIE_FILE", str(BASE_DIR / "serie.txt")))
 
 def generer_serie():
     chars = string.ascii_uppercase + string.digits

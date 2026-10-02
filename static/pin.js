@@ -7,11 +7,9 @@
 // Gére les erreurs et blocages anti-spam
 
 let checkingPin = false;
-
 window.addEventListener("DOMContentLoaded", () => {
 
     const pinInput = document.getElementById("pinInput");
-
     setTimeout(() => {
         pinInput.focus();
         pinInput.click();
@@ -64,6 +62,7 @@ window.addEventListener("DOMContentLoaded", () => {
                     }
                 }, 200);
             } else {
+
                 // Afficher le PIN 0.5 sec
                 pinInput.type = "text";
                 await new Promise(resolve =>

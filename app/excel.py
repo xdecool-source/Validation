@@ -80,7 +80,6 @@ def export_excel(joueurs, fichier):
         ws.cell(ligne, 7).value = j.points
         ws.cell(ligne, 8).value = j.validation
         ws.cell(ligne, 9).value = j.mutation
-
         ligne += 1
 
     # Ajustement automatique de la largeur des colonnes
@@ -89,23 +88,18 @@ def export_excel(joueurs, fichier):
             len(str(cell.value)) if cell.value else 0
             for cell in colonne
         )
-
         ws.column_dimensions[
             colonne[0].column_letter
         ].width = longueur + 3
-
     ws.auto_filter.ref = ws.dimensions
     ws.freeze_panes = "A2"
-
     wb.save(fichier)
 
 def export_neon(joueurs):
     """
     Exporte les joueurs dans la base Neon.
-
     Si la licence existe déjà :
         -> mise à jour du joueur
-
     Si la licence n'existe pas :
         -> création du joueur
     """
@@ -125,12 +119,10 @@ def export_neon(joueurs):
 
     if not donnees:
         return 0
-
     session = SessionLocal()
 
     try:
         requete = insert(Player).values(donnees)
-
         requete = requete.on_conflict_do_update(
             index_elements=["license"],
             set_={
@@ -145,7 +137,6 @@ def export_neon(joueurs):
 
         session.execute(requete)
         session.commit()
-
         return len(donnees)
 
     except Exception:

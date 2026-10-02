@@ -25,61 +25,34 @@ def create_token(role: str, user_license: str):
         "exp": datetime.now(timezone.utc)
                + timedelta(minutes=temps_expi_token)
     }
-    return jwt.encode(
-        payload,
-        SECRET_KEY,
-        algorithm=ALGORITHM
-    )
+    return jwt.encode(payload,SECRET_KEY,algorithm=ALGORITHM)
 
 # Vérification token
 def verify_token(authorization: str = Header(None)):
 
     if not authorization:
-        raise HTTPException(
-            status_code=401,
-            detail="Token manquant"
-        )
+        raise HTTPException(status_code=401,detail="Token manquant")
     if not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=401,
-            detail="Format invalide"
-        )
+        raise HTTPException(status_code=401,detail="Format invalide")
     token = authorization.replace("Bearer ", "")
-
     try:
-        payload = jwt.decode(
-            token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM]
-        )
+        payload = jwt.decode(token,SECRET_KEY,algorithms=[ALGORITHM])
         return payload
     except jwt.ExpiredSignatureError:
-        raise HTTPException(
-            status_code=403,
-            detail="Token expiré"
-        )
+        raise HTTPException(status_code=403,detail="Token expiré")
     except jwt.InvalidTokenError:
-        raise HTTPException(
-            status_code=403,
-            detail="Token invalide"
-        )
+        raise HTTPException(status_code=403,detail="Token invalide")
 
 # User
 def require_user(user=Depends(verify_token)):
 
     if user["role"] not in ["user", "admin"]:
-        raise HTTPException(
-            status_code=403,
-            detail="Accès refusé"
-        )
+        raise HTTPException(status_code=403,detail="Accès refusé")
     return user
 
 # Admin
 def require_admin(user=Depends(verify_token)):
 
     if user["role"] != "admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Admin requis"
-        )
+        raise HTTPException(status_code=403,detail="Admin requis")
     return user
