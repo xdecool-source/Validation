@@ -8,14 +8,20 @@
 #
 
 from dotenv import load_dotenv
+from pydantic_settings import BaseSettings
+from typing import ClassVar
+
 import os
 load_dotenv()
 
 temps_expi_token = 10 # minutes 
 
-class Settings:
+class Settings(BaseSettings):
+    
+    APP_VERSION: str = "Disponibilité : Version: V.4.3 TT Thuirinois XDC"
     DATABASE_URL: str = os.getenv("DATABASE_URL")  
-    MATCH_DAYS = [
+    # MATCH_DAYS = [
+    MATCH_DAYS: ClassVar[list[dict]] = [
         {"id": 1, "code": "J1", "date": "2026-09-20"},
         {"id": 2, "code": "J2", "date": "2026-10-04"},
         {"id": 3, "code": "J3", "date": "2026-10-18"},
@@ -31,4 +37,5 @@ class Settings:
         {"id": 13, "code": "J13", "date": "2027-05-23"},
         {"id": 14, "code": "J14", "date": "2027-05-30"},
     ]
+
 settings = Settings()

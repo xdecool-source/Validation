@@ -19,6 +19,7 @@ from dotenv import load_dotenv
 from app.admin import init_match_slots
 from sqlalchemy import text
 
+from app.config import settings
 from app.export_joueurs import router as export_joueurs_router
 
 import os
@@ -55,7 +56,11 @@ async def lifespan(app: FastAPI):
     init_match_slots() 
     yield
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    version=settings.APP_VERSION,
+    lifespan=lifespan,
+)
+
 app.include_router(admin_router)
 app.include_router(import_router)
 app.include_router(export_joueurs_router)
@@ -88,6 +93,7 @@ def home(request: Request):
             "request": request,
             "max_affiche_jour_valide": MAX_AFFICHE_JOUR_VALIDE,
             "date_limite": DATE_LIMITE,
+            "APP_VERSION": settings.APP_VERSION,
         },
     )
 

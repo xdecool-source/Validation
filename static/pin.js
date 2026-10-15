@@ -44,10 +44,10 @@ window.addEventListener("DOMContentLoaded", () => {
                     "token",
                     data.token
                 );
-                document.getElementById("appContent")
-                    .style.display = "block";
-                document.getElementById("pinContainer")
-                    .style.display = "none";
+                document.getElementById("appContent").style.display = "flex";
+
+                document.getElementById("pinScreen").classList.add("hidden");
+                
                 if (typeof initFileInput === "function") {
                     initFileInput();
                 }

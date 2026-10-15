@@ -287,34 +287,41 @@ def add_availability(
             for s in data["slots"]
         )
 
+        # Charge tous les créneaux de la journée en une seule requête
+        # au lieu d'effectuer un SELECT pour chaque case du formulaire.
+        slot_rows = conn.execute(text("""
+            SELECT id, label
+            FROM match_slots
+            WHERE match_day_id = :day_id
+        """), {"day_id": data["match_day_id"]}).fetchall()
+        slot_ids = {row.label: row.id for row in slot_rows}
+
+        # Prépare les écritures puis les envoie en lot dans la même transaction.
+        updates = []
         for slot in data["slots"]:
             label = slot["label"]
             available = slot["available"]
-            #  correction logique
+
             if absent_selected and label != "Absent":
                 available = False
-            if label not in valid_slots:
-                continue
-            slot_row = conn.execute(text("""
-                SELECT id FROM match_slots
-                WHERE match_day_id = :day_id AND label = :label
-            """), {
-                "day_id": data["match_day_id"],
-                "label": label
-            }).fetchone()
-            if not slot_row:
+            if label not in valid_slots or label not in slot_ids:
                 continue
 
-            conn.execute(text("""
-                INSERT INTO availabilities (player_id, slot_id, match_day_id, availability)
-                VALUES (:player_id, :slot_id, :match_day_id, :availability)
-                ON CONFLICT (player_id, slot_id, match_day_id)
-                DO UPDATE SET availability = EXCLUDED.availability
-            """), {
+            updates.append({
                 "player_id": player.id,
-                "slot_id": slot_row.id,
+                "slot_id": slot_ids[label],
                 "match_day_id": data["match_day_id"],
                 "availability": available
             })
+
+        if updates:
+            conn.execute(text("""
+                INSERT INTO availabilities
+                    (player_id, slot_id, match_day_id, availability)
+                VALUES
+                    (:player_id, :slot_id, :match_day_id, :availability)
+                ON CONFLICT (player_id, slot_id, match_day_id)
+                DO UPDATE SET availability = EXCLUDED.availability
+            """), updates)
 
     return {"message": "Validées"}

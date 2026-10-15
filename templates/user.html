@@ -18,7 +18,7 @@ data-max-affiche="{{ max_affiche_jour_valide }}"
 data-date-limite="{{ date_limite }}">
 
 <!-- Code Pin -->
-<div style="position:absolute; top:10px; right:10px;">
+<div id="pinScreen">
     <div id="pinContainer">
         <b> Disponibilités TT Thuirinois<br>Veuillez entrer le code 💪</b>
             <input
@@ -87,7 +87,7 @@ data-date-limite="{{ date_limite }}">
 <script src="/static/disponibilites.js"></script>
 
 <div style="position:fixed; bottom:5px; right:10px; font-size:11px; opacity:0.5; color: white;">
-Tennis de Table Thuirinois XDC Validation Version: v4.3
+{{ APP_VERSION }}
 </div>
 
 <script>
